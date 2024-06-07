@@ -79,6 +79,22 @@ namespace uSync.Umbraco.Commerce.Serializers
         public override OrderStatusReadOnly DoFindItem(Guid key)
             => _CommerceApi.GetOrderStatus(key);
 
+        public override ChangeType IsCurrent(XElement node, SyncSerializerOptions options)
+        {
+            XElement current = null;
+            var item = FindItem(node);
+            if(item != null && !item.IsDeleted)
+            {
+                var attempt = Serialize(item, options);
+                if(attempt.Success)
+                {
+                    current = attempt.Item;
+                }
+            }
+
+            return IsCurrent(node, current, options);
+        }
+
         public override void DoSaveItem(OrderStatusReadOnly item)
         {
             using (var uow = _uowProvider.Create())
