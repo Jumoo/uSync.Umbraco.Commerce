@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
+using System.Reflection;
 using System.Xml.Linq;
 using Umbraco.Commerce.Common;
 using Umbraco.Commerce.Core.Api;
@@ -62,12 +63,26 @@ namespace uSync.Umbraco.Commerce.Serializers
 
                 item.SetColor(node.Element(nameof(item.Color)).ValueOrDefault(item.Color));
                 item.SetSortOrder(node.Element(nameof(item.SortOrder)).ValueOrDefault(item.SortOrder));
+                
+                if(item.IsDeleted)
+                {
+                    RestoreSoftDelete(item);
+                }
 
                 _CommerceApi.SaveOrderStatus(item);
                 uow.Complete();
 
                 return SyncAttemptSucceed(name, item.AsReadOnly(), ChangeType.Import);
             }
+        }
+
+        private static void RestoreSoftDelete(OrderStatus item)
+        {
+            // NOTE: we have to use reflection until Umraco.Commerce resolve this thread: https://github.com/umbraco/Umbraco.Commerce.Issues/discussions/522
+            var stateField = typeof(OrderStatus).GetField("_state", BindingFlags.NonPublic | BindingFlags.Instance);
+            var state = (OrderStatusState)stateField.GetValue(item);
+            var deletedTimestampProperty = typeof(OrderStatusState).GetProperty(nameof(OrderStatusState.DeletedTimestamp), BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
+            deletedTimestampProperty.SetValue(state, 0);
         }
 
         public override string GetItemAlias(OrderStatusReadOnly item)
@@ -78,6 +93,22 @@ namespace uSync.Umbraco.Commerce.Serializers
 
         public override OrderStatusReadOnly DoFindItem(Guid key)
             => _CommerceApi.GetOrderStatus(key);
+
+        public override ChangeType IsCurrent(XElement node, SyncSerializerOptions options)
+        {
+            XElement current = null;
+            var item = FindItem(node);
+            if(item != null && !item.IsDeleted)
+            {
+                var attempt = Serialize(item, options);
+                if(attempt.Success)
+                {
+                    current = attempt.Item;
+                }
+            }
+
+            return IsCurrent(node, current, options);
+        }
 
         public override void DoSaveItem(OrderStatusReadOnly item)
         {
