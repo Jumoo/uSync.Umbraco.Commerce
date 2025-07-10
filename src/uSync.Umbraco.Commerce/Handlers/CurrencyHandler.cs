@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Commerce.Core.Api;
@@ -9,37 +10,60 @@ using Umbraco.Commerce.Core.Models;
 using uSync.BackOffice.Configuration;
 using uSync.BackOffice.Services;
 using uSync.BackOffice.SyncHandlers;
+using uSync.BackOffice.SyncHandlers.Interfaces;
+using uSync.BackOffice.SyncHandlers.Models;
 using uSync.Core;
 
 namespace uSync.Umbraco.Commerce.Handlers
 {
-    [SyncHandler("CommerceCurrencyHandler", "Currencies", "Commerce\\Currency", CommerceConstants.Priorites.Currency,
-        Icon = "icon-coins-dollar-alt", EntityType = CommerceConstants.UdiEntityType.Currency)]
+    [SyncHandler(
+        "CommerceCurrencyHandler",
+        "Currencies",
+        "Commerce\\Currency",
+        CommerceConstants.Priorites.Currency,
+        Icon = "icon-coins-dollar-alt",
+        EntityType = CommerceConstants.UdiEntityType.Currency
+    )]
     public class CurrencyHandler : CommerceSyncHandlerBase<CurrencyReadOnly>, ISyncHandler
     {
-        public CurrencyHandler(ICommerceApi CommerceApi, ILogger<CommerceSyncHandlerBase<CurrencyReadOnly>> logger, AppCaches appCaches, IShortStringHelper shortStringHelper, SyncFileService syncFileService, uSyncEventService mutexService, uSyncConfigService uSyncConfig, ISyncItemFactory itemFactory) : base(CommerceApi, logger, appCaches, shortStringHelper, syncFileService, mutexService, uSyncConfig, itemFactory)
-        { }
+        public CurrencyHandler(
+            ILogger<SyncHandlerRoot<CurrencyReadOnly, CurrencyReadOnly>> logger,
+            AppCaches appCaches,
+            IShortStringHelper shortStringHelper,
+            ISyncFileService syncFileService,
+            ISyncEventService mutexService,
+            ISyncConfigService uSyncConfig,
+            ISyncItemFactory itemFactory,
+            ICommerceApi commerceApi
+        )
+            : base(
+                logger,
+                appCaches,
+                shortStringHelper,
+                syncFileService,
+                mutexService,
+                uSyncConfig,
+                itemFactory,
+                commerceApi
+            ) { }
 
-        protected override Guid GetStoreId(CurrencyReadOnly item)
-            => item.StoreId;
+        protected override Guid GetStoreId(CurrencyReadOnly item) => item.StoreId;
 
-        protected override void DeleteViaService(CurrencyReadOnly item)
-            => _CommerceApi.DeleteCurrency(item.Id);
+        protected override Task DeleteViaServiceAsync(CurrencyReadOnly item) =>
+            _CommerceApi.DeleteCurrencyAsync(item.Id);
 
-        protected override IEnumerable<CurrencyReadOnly> GetByStore(Guid storeId)
-            => _CommerceApi.GetCurrencies(storeId);
+        protected override Task<IEnumerable<CurrencyReadOnly>> GetByStoreAsync(Guid storeId) =>
+            _CommerceApi.GetCurrenciesAsync(storeId);
 
-        protected override CurrencyReadOnly GetFromService(Guid key)
-            => _CommerceApi.GetCurrency(key);
+        protected override Task<CurrencyReadOnly> GetFromServiceAsync(Guid key) =>
+            _CommerceApi.GetCurrencyAsync(key);
 
-        protected override string GetItemName(CurrencyReadOnly item)
-            => item.Name;
+        protected override string GetItemName(CurrencyReadOnly item) => item.Name;
 
+        public Task HandleAsync(CurrencySavedNotification notification) =>
+            CommerceItemSavedAsync(notification.Currency);
 
-        public void Handle(CurrencySavedNotification notification)
-            => CommerceItemSaved(notification.Currency);
-
-        public void Handle(CurrencyDeletedNotification notification)
-            => CommerceItemDeleted(notification.Currency);
+        public Task HandleAsync(CurrencyDeletedNotification notification) =>
+            CommerceItemDeletedAsync(notification.Currency);
     }
 }

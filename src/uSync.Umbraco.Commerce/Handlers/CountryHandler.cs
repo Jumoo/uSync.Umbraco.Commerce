@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Commerce.Core.Api;
@@ -9,6 +10,8 @@ using Umbraco.Commerce.Core.Models;
 using uSync.BackOffice.Configuration;
 using uSync.BackOffice.Services;
 using uSync.BackOffice.SyncHandlers;
+using uSync.BackOffice.SyncHandlers.Interfaces;
+using uSync.BackOffice.SyncHandlers.Models;
 using uSync.Core;
 
 namespace uSync.Umbraco.Commerce.Handlers
@@ -20,32 +23,58 @@ namespace uSync.Umbraco.Commerce.Handlers
     ///  PostImportHandler means the import is ran again at the end, because it depends on payment & shipping
     ///  which have to run after country as they depend on them.
     /// </remarks>
-    [SyncHandler("CommerceCountryHandler", "Countries", "Commerce\\Country", CommerceConstants.Priorites.Country,
-        Icon = "icon-globe", IsTwoPass = true, EntityType = CommerceConstants.UdiEntityType.Country)]
-    public class CountryHandler : CommerceSyncHandlerBase<CountryReadOnly>, ISyncPostImportHandler, ISyncHandler
+    [SyncHandler(
+        "CommerceCountryHandler",
+        "Countries",
+        "Commerce\\Country",
+        CommerceConstants.Priorites.Country,
+        Icon = "icon-globe",
+        IsTwoPass = true,
+        EntityType = CommerceConstants.UdiEntityType.Country
+    )]
+    public class CountryHandler
+        : CommerceSyncHandlerBase<CountryReadOnly>,
+            ISyncPostImportHandler,
+            ISyncHandler
     {
-        protected override Guid GetStoreId(CountryReadOnly item)
-            => item.StoreId;
+        public CountryHandler(
+            ILogger<SyncHandlerRoot<CountryReadOnly, CountryReadOnly>> logger,
+            AppCaches appCaches,
+            IShortStringHelper shortStringHelper,
+            ISyncFileService syncFileService,
+            ISyncEventService mutexService,
+            ISyncConfigService uSyncConfig,
+            ISyncItemFactory itemFactory,
+            ICommerceApi commerceApi
+        )
+            : base(
+                logger,
+                appCaches,
+                shortStringHelper,
+                syncFileService,
+                mutexService,
+                uSyncConfig,
+                itemFactory,
+                commerceApi
+            ) { }
 
-        public CountryHandler(ICommerceApi CommerceApi, ILogger<CommerceSyncHandlerBase<CountryReadOnly>> logger, AppCaches appCaches, IShortStringHelper shortStringHelper, SyncFileService syncFileService, uSyncEventService mutexService, uSyncConfigService uSyncConfig, ISyncItemFactory itemFactory) : base(CommerceApi, logger, appCaches, shortStringHelper, syncFileService, mutexService, uSyncConfig, itemFactory)
-        { }
+        protected override Guid GetStoreId(CountryReadOnly item) => item.StoreId;
 
-        protected override void DeleteViaService(CountryReadOnly item)
-            => _CommerceApi.DeleteCountry(item.Id);
+        protected override Task DeleteViaServiceAsync(CountryReadOnly item) =>
+            _CommerceApi.DeleteCountryAsync(item.Id);
 
-        protected override IEnumerable<CountryReadOnly> GetByStore(Guid storeId)
-            => _CommerceApi.GetCountries(storeId);
+        protected override Task<IEnumerable<CountryReadOnly>> GetByStoreAsync(Guid storeId) =>
+            _CommerceApi.GetCountriesAsync(storeId);
 
-        protected override CountryReadOnly GetFromService(Guid key)
-            => _CommerceApi.GetCountry(key);
+        protected override Task<CountryReadOnly> GetFromServiceAsync(Guid key) =>
+            _CommerceApi.GetCountryAsync(key);
 
-        protected override string GetItemName(CountryReadOnly item)
-            => item.Name;
+        protected override string GetItemName(CountryReadOnly item) => item.Name;
 
-        public void Handle(CountrySavedNotification notification)
-            => CommerceItemSaved(notification.Country);
+        public Task HandleAsync(CountrySavedNotification notification) =>
+            CommerceItemSavedAsync(notification.Country);
 
-        public void Handle(CountryDeletedNotification notification)
-            => CommerceItemDeleted(notification.Country);
+        public Task HandleAsync(CountryDeletedNotification notification) =>
+            CommerceItemDeletedAsync(notification.Country);
     }
 }

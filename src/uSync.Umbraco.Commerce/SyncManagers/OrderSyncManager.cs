@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Umbraco.Cms.Core;
 using Umbraco.Commerce.Core.Api;
 using Umbraco.Commerce.Core.Models;
@@ -10,9 +11,13 @@ using static Umbraco.Commerce.Cms.Constants.Trees.Settings;
 
 namespace uSync.Umbraco.Commerce.SyncManagers
 {
+    [SyncItemManager(CommerceConstants.UdiEntityType.Store)]
     public class OrderSyncManager : ISyncItemManager
     {
-        private readonly Dictionary<NodeType, string> _nodeToEntityMapping = new Dictionary<NodeType, string>
+        private readonly Dictionary<NodeType, string> _nodeToEntityMapping = new Dictionary<
+            NodeType,
+            string
+        >
         {
             { NodeType.Store, CommerceConstants.UdiEntityType.Store },
             { NodeType.OrderStatuses, CommerceConstants.UdiEntityType.OrderStatus },
@@ -23,7 +28,7 @@ namespace uSync.Umbraco.Commerce.SyncManagers
             { NodeType.TaxClasses, CommerceConstants.UdiEntityType.TaxClass },
             { NodeType.EmailTemplates, CommerceConstants.UdiEntityType.EmailTemplate },
             { NodeType.ExportTemplates, CommerceConstants.UdiEntityType.ExportTemplate },
-            { NodeType.PrintTemplates, CommerceConstants.UdiEntityType.PrintTemplate }
+            { NodeType.PrintTemplates, CommerceConstants.UdiEntityType.PrintTemplate },
         };
 
         public string[] EntityTypes => _nodeToEntityMapping.Values.ToArray();
@@ -37,110 +42,42 @@ namespace uSync.Umbraco.Commerce.SyncManagers
             _CommerceApi = CommerceApi;
         }
 
-        /// <summary>
-        ///  return the local entity, based on what the user picked from the tree.
-        /// </summary>
-        /// <remarks>
-        ///  the localitem is enough for uSync to start a sync process it tells us
-        ///  the Id, Udi & Entity type of an item (and the name for nice UI)
-        /// </remarks>
-        public SyncLocalItem GetEntity(SyncTreeItem treeItem)
-        {
-            var entityType = GetEntityTypeFromTree(treeItem);
-            if (string.IsNullOrEmpty(entityType)) return null;
-
-            switch (entityType)
-            {
-                case CommerceConstants.UdiEntityType.Store:
-                    return GetStoreItem(treeItem.Id);
-                default:
-                    return GetStoreSubItem(treeItem.Id, treeItem.QueryStrings["storeId"], entityType);
-            }
-
-        }
-
-        private SyncLocalItem GetStoreItem(string id)
-        {
-            // only showing the menu for the store 
-            var storeGuid = GetStoreGuid(id);
-            if (storeGuid == null) return null;
-
-            // the isCommerceStore proved this was a guid.
-
-            var store = _CommerceApi.GetStore(storeGuid.Value);
-            if (store == null) return null;
-
-            return new SyncLocalItem
-            {
-                EntityType = CommerceConstants.UdiEntityType.Store,
-                Id = store.Id.ToString(),
-                Name = store.Name,
-                Udi = Udi.Create(CommerceConstants.UdiEntityType.Store, store.Id)
-            };
-        }
-
-        private StoreReadOnly GetStoreById(string id)
-        {
-            var storeId = GetStoreGuid(id);
-            if (storeId == null) return null;
-            return _CommerceApi.GetStore(storeId.Value);
-        }
-
-        /// <summary>
-        ///  a sub item of the store - we return the 'root' item this type - as we are going to sync it all.
-        /// </summary>
-        private SyncLocalItem GetStoreSubItem(string id, string storeId, string entityType)
-        {
-            var store = GetStoreById(storeId);
-
-            return new SyncLocalItem
-            {
-                EntityType = entityType,
-                Id = id,
-                Name = $"{store.Name} {entityType}",
-                Udi = Udi.Create(entityType, store.Id),
-            };
-        }
-
-        public IEnumerable<SyncItem> GetItems(SyncItem item)
+        public async Task<IEnumerable<SyncItem>> GetItemsAsync(SyncItem item)
         {
             // for the store just return ths store item,
             // the depdency checker will do the rest.
             if (item.Udi.EntityType == CommerceConstants.UdiEntityType.Store)
                 return item.AsEnumerableOfOne();
 
-            // for other items the ID might be the store ID 
-            // which acts as a root Udi for that type in the store. 
+            // for other items the ID might be the store ID
+            // which acts as a root Udi for that type in the store.
             if (item.Udi is GuidUdi guidUdi)
             {
-                var store = _CommerceApi.GetStore(guidUdi.Guid);
-                if (store == null) return item.AsEnumerableOfOne();
+                var store = await _CommerceApi.GetStoreAsync(guidUdi.Guid);
+                if (store == null)
+                    return item.AsEnumerableOfOne();
 
-                // if it was the store, get all the items of that type 
+                // if it was the store, get all the items of that type
 
                 // there might be a more generic way of doing this ?
                 switch (item.Udi.EntityType)
                 {
                     case CommerceConstants.UdiEntityType.OrderStatus:
-                        return _CommerceApi.GetOrderStatuses(store.Id)
-                            .Select(x => new SyncItem
+                        return (await _CommerceApi.GetOrderStatusesAsync(store.Id)).Select(
+                            x => new SyncItem
                             {
                                 Name = x.Name,
                                 Udi = Udi.Create(CommerceConstants.UdiEntityType.OrderStatus, x.Id),
                                 Flags = item.Flags,
-                            });
-
+                            }
+                        );
                 }
             }
             return item.AsEnumerableOfOne();
         }
 
-
-
-
-
         /// <summary>
-        ///  uSync Exporter - supply the info for it to open the picker. 
+        ///  uSync Exporter - supply the info for it to open the picker.
         /// </summary>
         public SyncEntityInfo GetSyncInfo(string entityType)
         {
@@ -154,7 +91,8 @@ namespace uSync.Umbraco.Commerce.SyncManagers
         public SyncTreeType GetTreeType(SyncTreeItem treeItem)
         {
             var entityType = GetEntityTypeFromTree(treeItem);
-            if (entityType != null) return SyncTreeType.Settings;
+            if (entityType != null)
+                return SyncTreeType.Settings;
 
             return SyncTreeType.None;
         }
@@ -167,17 +105,18 @@ namespace uSync.Umbraco.Commerce.SyncManagers
             return null;
         }
 
-
-
         private string GetEntityTypeFromTree(SyncTreeItem item)
         {
-            if (GetStoreGuid(item.Id) != null) return CommerceConstants.UdiEntityType.Store;
+            if (GetStoreGuid(item.Id) != null)
+                return CommerceConstants.UdiEntityType.Store;
 
             var storeId = item.QueryStrings?["storeId"];
-            if (string.IsNullOrWhiteSpace(storeId)) return string.Empty;
+            if (string.IsNullOrWhiteSpace(storeId))
+                return string.Empty;
 
             var attempt = item.Id.TryConvertTo<int>();
-            if (!attempt.Success) return string.Empty;
+            if (!attempt.Success)
+                return string.Empty;
 
             var CommerceNodeType = Ids.FirstOrDefault(x => x.Value == attempt.Result).Key;
 
@@ -185,6 +124,124 @@ namespace uSync.Umbraco.Commerce.SyncManagers
                 return _nodeToEntityMapping[CommerceNodeType];
 
             return string.Empty;
+        }
+
+        public async Task<SyncEntity> GetSyncEntityAsync(string key)
+        {
+            if (Guid.TryParse(key, out var guidKey) is false)
+                return null;
+
+            if (await _CommerceApi.GetStoreAsync(guidKey) is StoreReadOnly store)
+                return new SyncEntity()
+                {
+                    Name = store.Name,
+                    Icon = "icon-store",
+                    Udi = Udi.Create(CommerceConstants.UdiEntityType.Store, store.Id),
+                };
+
+            if (await _CommerceApi.GetOrderStatusAsync(guidKey) is OrderStatusReadOnly orderStatus)
+                return new SyncEntity()
+                {
+                    Name = orderStatus.Name,
+                    Icon = "icon-file-cabinet",
+                    Udi = Udi.Create(CommerceConstants.UdiEntityType.OrderStatus, orderStatus.Id),
+                };
+
+            if (
+                await _CommerceApi.GetShippingMethodAsync(guidKey)
+                is ShippingMethodReadOnly shippingMethod
+            )
+                return new SyncEntity()
+                {
+                    Name = shippingMethod.Name,
+                    Icon = "icon-truck",
+                    Udi = Udi.Create(
+                        CommerceConstants.UdiEntityType.ShippingMethod,
+                        shippingMethod.Id
+                    ),
+                };
+
+            if (await _CommerceApi.GetCountryAsync(guidKey) is CountryReadOnly country)
+                return new SyncEntity()
+                {
+                    Name = country.Name,
+                    Icon = "icon-truck",
+                    Udi = Udi.Create(CommerceConstants.UdiEntityType.Country, country.Id),
+                };
+
+            if (await _CommerceApi.GetCurrencyAsync(guidKey) is CurrencyReadOnly currency)
+                return new SyncEntity()
+                {
+                    Name = currency.Name,
+                    Icon = "icon-coins-dollar-alt",
+                    Udi = Udi.Create(CommerceConstants.UdiEntityType.Currency, currency.Id),
+                };
+
+            if (
+                await _CommerceApi.GetPaymentMethodAsync(guidKey)
+                is PaymentMethodReadOnly paymentMethod
+            )
+                return new SyncEntity()
+                {
+                    Name = paymentMethod.Name,
+                    Icon = "icon-multiple-credit-cards",
+                    Udi = Udi.Create(
+                        CommerceConstants.UdiEntityType.PaymentMethod,
+                        paymentMethod.Id
+                    ),
+                };
+
+            if (await _CommerceApi.GetTaxClassAsync(guidKey) is TaxClassReadOnly taxClass)
+                return new SyncEntity()
+                {
+                    Name = taxClass.Name,
+                    Icon = "icon-library",
+                    Udi = Udi.Create(CommerceConstants.UdiEntityType.TaxClass, taxClass.Id),
+                };
+
+            if (
+                await _CommerceApi.GetEmailTemplateAsync(guidKey)
+                is EmailTemplateReadOnly emailTemplate
+            )
+                return new SyncEntity()
+                {
+                    Name = emailTemplate.Name,
+                    Icon = "icon-mailbox",
+                    Udi = Udi.Create(
+                        CommerceConstants.UdiEntityType.EmailTemplate,
+                        emailTemplate.Id
+                    ),
+                };
+
+            if (
+                await _CommerceApi.GetExportTemplateAsync(guidKey)
+                is ExportTemplateReadOnly exportTemplate
+            )
+                return new SyncEntity()
+                {
+                    Name = exportTemplate.Name,
+                    Icon = "icon-sharing-iphone",
+                    Udi = Udi.Create(
+                        CommerceConstants.UdiEntityType.ExportTemplate,
+                        exportTemplate.Id
+                    ),
+                };
+
+            if (
+                await _CommerceApi.GetPrintTemplateAsync(guidKey)
+                is PrintTemplateReadOnly printTemplate
+            )
+                return new SyncEntity()
+                {
+                    Name = printTemplate.Name,
+                    Icon = "icon-truck",
+                    Udi = Udi.Create(
+                        CommerceConstants.UdiEntityType.PrintTemplate,
+                        printTemplate.Id
+                    ),
+                };
+
+            return null;
         }
     }
 }

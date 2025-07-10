@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Commerce.Core.Api;
@@ -9,37 +10,60 @@ using Umbraco.Commerce.Core.Models;
 using uSync.BackOffice.Configuration;
 using uSync.BackOffice.Services;
 using uSync.BackOffice.SyncHandlers;
+using uSync.BackOffice.SyncHandlers.Interfaces;
+using uSync.BackOffice.SyncHandlers.Models;
 using uSync.Core;
 
 namespace uSync.Umbraco.Commerce.Handlers
 {
-    [SyncHandler("CommerceOrderStatusHandler", "Order Statuses", "Commerce\\OrderStatus", CommerceConstants.Priorites.OrderStatus,
-        Icon = "icon-file-cabinet", EntityType = CommerceConstants.UdiEntityType.OrderStatus)]
+    [SyncHandler(
+        "CommerceOrderStatusHandler",
+        "Order Statuses",
+        "Commerce\\OrderStatus",
+        CommerceConstants.Priorites.OrderStatus,
+        Icon = "icon-file-cabinet",
+        EntityType = CommerceConstants.UdiEntityType.OrderStatus
+    )]
     public class OrderStatusHandler : CommerceSyncHandlerBase<OrderStatusReadOnly>, ISyncHandler
     {
-        public OrderStatusHandler(ICommerceApi CommerceApi, ILogger<CommerceSyncHandlerBase<OrderStatusReadOnly>> logger, AppCaches appCaches, IShortStringHelper shortStringHelper, SyncFileService syncFileService, uSyncEventService mutexService, uSyncConfigService uSyncConfig, ISyncItemFactory itemFactory) : base(CommerceApi, logger, appCaches, shortStringHelper, syncFileService, mutexService, uSyncConfig, itemFactory)
-        { }
+        public OrderStatusHandler(
+            ILogger<SyncHandlerRoot<OrderStatusReadOnly, OrderStatusReadOnly>> logger,
+            AppCaches appCaches,
+            IShortStringHelper shortStringHelper,
+            ISyncFileService syncFileService,
+            ISyncEventService mutexService,
+            ISyncConfigService uSyncConfig,
+            ISyncItemFactory itemFactory,
+            ICommerceApi commerceApi
+        )
+            : base(
+                logger,
+                appCaches,
+                shortStringHelper,
+                syncFileService,
+                mutexService,
+                uSyncConfig,
+                itemFactory,
+                commerceApi
+            ) { }
 
-        protected override Guid GetStoreId(OrderStatusReadOnly item)
-            => item.StoreId;
+        protected override Guid GetStoreId(OrderStatusReadOnly item) => item.StoreId;
 
-        protected override void DeleteViaService(OrderStatusReadOnly item)
-            => _CommerceApi.DeleteOrderStatus(item.Id);
+        protected override Task DeleteViaServiceAsync(OrderStatusReadOnly item) =>
+            _CommerceApi.DeleteOrderStatusAsync(item.Id);
 
-        protected override IEnumerable<OrderStatusReadOnly> GetByStore(Guid storeId)
-            => _CommerceApi.GetOrderStatuses(storeId);
+        protected override Task<IEnumerable<OrderStatusReadOnly>> GetByStoreAsync(Guid storeId) =>
+            _CommerceApi.GetOrderStatusesAsync(storeId);
 
-        protected override OrderStatusReadOnly GetFromService(Guid key)
-            => _CommerceApi.GetOrderStatus(key);
+        protected override Task<OrderStatusReadOnly> GetFromServiceAsync(Guid key) =>
+            _CommerceApi.GetOrderStatusAsync(key);
 
-        protected override string GetItemName(OrderStatusReadOnly item)
-            => item.Name;
+        protected override string GetItemName(OrderStatusReadOnly item) => item.Name;
 
+        public Task HandleAsync(OrderStatusSavedNotification notification) =>
+            CommerceItemSavedAsync(notification.OrderStatus);
 
-        public void Handle(OrderStatusSavedNotification notification)
-            => CommerceItemSaved(notification.OrderStatus);
-
-        public void Handle(OrderStatusDeletedNotification notification)
-            => CommerceItemDeleted(notification.OrderStatus);
+        public Task HandleAsync(OrderStatusDeletedNotification notification) =>
+            CommerceItemDeletedAsync(notification.OrderStatus);
     }
 }

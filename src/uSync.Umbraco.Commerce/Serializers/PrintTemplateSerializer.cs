@@ -1,9 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
+using System.Threading.Tasks;
 using System.Xml.Linq;
+using Microsoft.Extensions.Logging;
 using Umbraco.Commerce.Common;
 using Umbraco.Commerce.Core.Api;
 using Umbraco.Commerce.Core.Models;
+using Umbraco.Commerce.Extensions;
 using uSync.Core;
 using uSync.Core.Models;
 using uSync.Core.Serialization;
@@ -12,15 +14,27 @@ using uSync.Umbraco.Commerce.Extensions;
 
 namespace uSync.Umbraco.Commerce.Serializers
 {
-    [SyncSerializer("D0D7176C-2EDD-453E-9795-D71F1D29B44A", "Print Template Serializer", CommerceConstants.Serialization.PrintTemplate)]
-    public class PrintTemplateSerializer : CommerceSerializerBase<PrintTemplateReadOnly>, ISyncSerializer<PrintTemplateReadOnly>
+    [SyncSerializer(
+        "D0D7176C-2EDD-453E-9795-D71F1D29B44A",
+        "Print Template Serializer",
+        CommerceConstants.Serialization.PrintTemplate
+    )]
+    public class PrintTemplateSerializer
+        : CommerceSerializerBase<PrintTemplateReadOnly>,
+            ISyncSerializer<PrintTemplateReadOnly>
     {
-        public PrintTemplateSerializer(ICommerceApi CommerceApi, CommerceSyncSettingsAccessor settingsAccessor,
+        public PrintTemplateSerializer(
+            ICommerceApi CommerceApi,
+            CommerceSyncSettingsAccessor settingsAccessor,
             IUnitOfWorkProvider uowProvider,
-            ILogger<PrintTemplateSerializer> logger) : base(CommerceApi, settingsAccessor, uowProvider, logger)
-        { }
+            ILogger<PrintTemplateSerializer> logger
+        )
+            : base(CommerceApi, settingsAccessor, uowProvider, logger) { }
 
-        protected override SyncAttempt<XElement> SerializeCore(PrintTemplateReadOnly item, SyncSerializerOptions options)
+        protected override Task<SyncAttempt<XElement>> SerializeCoreAsync(
+            PrintTemplateReadOnly item,
+            SyncSerializerOptions options
+        )
         {
             var node = InitializeBaseNode(item, ItemAlias(item));
 
@@ -31,69 +45,72 @@ namespace uSync.Umbraco.Commerce.Serializers
             node.Add(new XElement(nameof(item.Category), item.Category));
             node.Add(new XElement(nameof(item.TemplateView), item.TemplateView));
 
-            return SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export);
+            return Task.FromResult(
+                SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export)
+            );
         }
 
-        public override bool IsValid(XElement node)
-            => base.IsValid(node)
-            && node.GetStoreId() != Guid.Empty;
+        public override bool IsValid(XElement node) =>
+            base.IsValid(node) && node.GetStoreId() != Guid.Empty;
 
-        protected override SyncAttempt<PrintTemplateReadOnly> DeserializeCore(XElement node, SyncSerializerOptions options)
+        protected override async Task<SyncAttempt<PrintTemplateReadOnly>> DeserializeCoreAsync(
+            XElement node,
+            SyncSerializerOptions options
+        )
         {
-            var readOnlyItem = FindItem(node);
+            var readOnlyItem = await FindItemAsync(node);
 
             var alias = node.GetAlias();
             var id = node.GetKey();
             var name = node.Element(nameof(readOnlyItem.Name)).ValueOrDefault(alias);
             var storeId = node.GetStoreId();
 
-            using (var uow = _uowProvider.Create())
+            return await _uowProvider.ExecuteAsync(async uow =>
             {
                 PrintTemplate item;
                 if (readOnlyItem == null)
                 {
-                    item = PrintTemplate.Create(uow, id, storeId, alias, name);
+                    item = await PrintTemplate.CreateAsync(uow, id, storeId, alias, name);
                 }
                 else
                 {
-                    item = readOnlyItem.AsWritable(uow);
-                    item.SetAlias(alias)
-                         .SetName(name);
+                    item = await readOnlyItem.AsWritableAsync(uow);
+                    await item.SetAliasAsync(alias).SetNameAsync(name);
                 }
 
-                item.SetCategory(node.Element(nameof(item.Category)).ValueOrDefault(item.Category));
-                item.SetTemplateView(node.Element(nameof(item.TemplateView)).ValueOrDefault(item.TemplateView));
+                await item.SetCategoryAsync(
+                        node.Element(nameof(item.Category)).ValueOrDefault(item.Category)
+                    )
+                    .SetTemplateViewAsync(
+                        node.Element(nameof(item.TemplateView)).ValueOrDefault(item.TemplateView)
+                    );
 
-                _CommerceApi.SavePrintTemplate(item);
+                await _CommerceApi.SavePrintTemplateAsync(item);
 
                 uow.Complete();
 
                 return SyncAttemptSucceed(name, item.AsReadOnly(), ChangeType.Import);
-            }
+            });
         }
 
-        // 
+        //
 
-        public override string GetItemAlias(PrintTemplateReadOnly item)
-            => item.Alias;
+        public override string GetItemAlias(PrintTemplateReadOnly item) => item.Alias;
 
-        public override void DoDeleteItem(PrintTemplateReadOnly item)
-            => _CommerceApi.DeletePrintTemplate(item.Id);
+        public override Task DoDeleteItemAsync(PrintTemplateReadOnly item) =>
+            _CommerceApi.DeletePrintTemplateAsync(item.Id);
 
-        public override PrintTemplateReadOnly DoFindItem(Guid key)
-            => _CommerceApi.GetPrintTemplate(key);
+        public override Task<PrintTemplateReadOnly> DoFindItemAsync(Guid key) =>
+            _CommerceApi.GetPrintTemplateAsync(key);
 
-        public override PrintTemplateReadOnly DoFindItem(string alias)
-            => null;
+        public override Task<PrintTemplateReadOnly> DoFindItemAsync(string alias) => null;
 
-        public override void DoSaveItem(PrintTemplateReadOnly item)
-        {
-            using (var uow = _uowProvider.Create())
+        public override Task DoSaveItemAsync(PrintTemplateReadOnly item) =>
+            _uowProvider.ExecuteAsync(async uow =>
             {
-                var entity = item.AsWritable(uow);
-                _CommerceApi.SavePrintTemplate(entity);
+                var entity = await item.AsWritableAsync(uow);
+                await _CommerceApi.SavePrintTemplateAsync(entity);
                 uow.Complete();
-            }
-        }
+            });
     }
 }

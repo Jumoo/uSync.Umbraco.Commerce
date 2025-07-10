@@ -1,11 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Xml.Linq;
+using Microsoft.Extensions.Logging;
 using Umbraco.Commerce.Common;
 using Umbraco.Commerce.Core.Api;
 using Umbraco.Commerce.Core.Models;
+using Umbraco.Commerce.Extensions;
 using Umbraco.Extensions;
 using uSync.Core;
 using uSync.Core.Models;
@@ -16,15 +18,27 @@ using uSync.Umbraco.Commerce.SyncModels;
 
 namespace uSync.Umbraco.Commerce.Serializers
 {
-    [SyncSerializer("22F98052-DD59-4A0C-AA13-52398B794ED5", "TaxClass Serializer", CommerceConstants.Serialization.TaxClass)]
-    public class TaxClassSerializer : CommerceSerializerBase<TaxClassReadOnly>, ISyncSerializer<TaxClassReadOnly>
+    [SyncSerializer(
+        "22F98052-DD59-4A0C-AA13-52398B794ED5",
+        "TaxClass Serializer",
+        CommerceConstants.Serialization.TaxClass
+    )]
+    public class TaxClassSerializer
+        : CommerceSerializerBase<TaxClassReadOnly>,
+            ISyncSerializer<TaxClassReadOnly>
     {
-        public TaxClassSerializer(ICommerceApi CommerceApi, CommerceSyncSettingsAccessor settingsAccessor,
+        public TaxClassSerializer(
+            ICommerceApi CommerceApi,
+            CommerceSyncSettingsAccessor settingsAccessor,
             IUnitOfWorkProvider uowProvider,
-            ILogger<TaxClassSerializer> logger) : base(CommerceApi, settingsAccessor, uowProvider, logger)
-        { }
+            ILogger<TaxClassSerializer> logger
+        )
+            : base(CommerceApi, settingsAccessor, uowProvider, logger) { }
 
-        protected override SyncAttempt<XElement> SerializeCore(TaxClassReadOnly item, SyncSerializerOptions options)
+        protected override Task<SyncAttempt<XElement>> SerializeCoreAsync(
+            TaxClassReadOnly item,
+            SyncSerializerOptions options
+        )
         {
             var node = InitializeBaseNode(item, ItemAlias(item));
 
@@ -36,64 +50,82 @@ namespace uSync.Umbraco.Commerce.Serializers
 
             node.Add(SerializeTaxRates(item));
 
-            return SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export);
+            return Task.FromResult(
+                SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export)
+            );
         }
 
         private XElement SerializeTaxRates(TaxClassReadOnly item)
         {
-            var root = new XElement("TaxRates");
+            var root = new XElement("TaxClasses");
 
-            foreach (var rate in item.CountryRegionTaxRates)
+            foreach (var rate in item.CountryRegionTaxClasses)
             {
-                root.Add(new XElement("Rate",
-                    new XElement("CountryId", rate.CountryId),
-                    new XElement("RegionId", rate.RegionId),
-                    new XElement("TaxRate", rate.TaxRate)));
+                root.Add(
+                    new XElement(
+                        "Rate",
+                        new XElement("CountryId", rate.CountryId),
+                        new XElement("RegionId", rate.RegionId),
+                        new XElement("TaxCode", rate.TaxCode),
+                        new XElement("TaxRate", rate.TaxRate)
+                    )
+                );
             }
 
             return root;
         }
 
+        public override bool IsValid(XElement node) =>
+            base.IsValid(node) && node.GetStoreId() != Guid.Empty;
 
-        public override bool IsValid(XElement node)
-            => base.IsValid(node)
-            && node.GetStoreId() != Guid.Empty;
-
-        protected override SyncAttempt<TaxClassReadOnly> DeserializeCore(XElement node, SyncSerializerOptions options)
+        protected override async Task<SyncAttempt<TaxClassReadOnly>> DeserializeCoreAsync(
+            XElement node,
+            SyncSerializerOptions options
+        )
         {
-            var readonlyItem = FindItem(node);
+            var readonlyItem = await FindItemAsync(node);
 
             var alias = node.GetAlias();
             var id = node.GetKey();
             var name = node.Element(nameof(readonlyItem.Name)).ValueOrDefault(alias);
             var storeId = node.GetStoreId();
-            var defaultTaxRate = node.Element(nameof(readonlyItem.DefaultTaxRate)).ValueOrDefault((decimal)0);
+            var defaultTaxRate = node.Element(nameof(readonlyItem.DefaultTaxRate))
+                .ValueOrDefault((decimal)0);
 
-            using (var uow = _uowProvider.Create())
+            return await _uowProvider.ExecuteAsync(async uow =>
             {
                 TaxClass item;
                 if (readonlyItem == null)
                 {
-                    item = TaxClass.Create(uow, id, storeId, alias, name, defaultTaxRate);
+                    item = await TaxClass.CreateAsync(
+                        uow,
+                        id,
+                        storeId,
+                        alias,
+                        name,
+                        defaultTaxRate
+                    );
                 }
                 else
                 {
-                    item = readonlyItem.AsWritable(uow);
-                    item.SetAlias(alias)
-                        .SetName(name)
-                        .SetDefaultTaxRate(defaultTaxRate);
+                    item = await readonlyItem.AsWritableAsync(uow);
+                    await item.SetAliasAsync(alias)
+                        .SetNameAsync(name)
+                        .SetDefaultTaxRateAsync(defaultTaxRate);
                 }
 
-                item.SetSortOrder(node.Element(nameof(item.SortOrder)).ValueOrDefault(item.SortOrder));
+                await item.SetSortOrderAsync(
+                    node.Element(nameof(item.SortOrder)).ValueOrDefault(item.SortOrder)
+                );
 
-                DeserializeTaxRates(node, item);
+                await DeserializeTaxRatesAsync(node, item);
 
-                _CommerceApi.SaveTaxClass(item);
+                await _CommerceApi.SaveTaxClassAsync(item);
 
                 uow.Complete();
 
                 return SyncAttemptSucceed(name, item.AsReadOnly(), ChangeType.Import);
-            }
+            });
         }
 
         protected List<SyncTaxRateModel> GetTaxRates(XElement node)
@@ -106,35 +138,49 @@ namespace uSync.Umbraco.Commerce.Serializers
             {
                 foreach (var value in root.Elements("Rate"))
                 {
-                    taxRates.Add(new SyncTaxRateModel
-                    {
-                        CountryId = value.GetGuidValue("CountryId"),
-                        RegionId = value.GetGuidValue("RegionId"),
-                        Rate = value.Element("TaxRate").ValueOrDefault((decimal)0)
-                    });
+                    taxRates.Add(
+                        new SyncTaxRateModel
+                        {
+                            CountryId = value.GetGuidValue("CountryId"),
+                            RegionId = value.GetGuidValue("RegionId"),
+                            Rate = value.Element("TaxRate").ValueOrDefault((decimal)0),
+                        }
+                    );
                 }
             }
 
             return taxRates;
         }
 
-        protected void DeserializeTaxRates(XElement node, TaxClass item)
+        protected async Task DeserializeTaxRatesAsync(XElement node, TaxClass item)
         {
             var rates = GetTaxRates(node);
 
-            var ratesToRemove = item.CountryRegionTaxRates
-                .Where(x => rates == null || !rates.Any(y => y.CountryId == x.CountryId && y.RegionId == x.RegionId))
+            var ratesToRemove = item
+                .CountryRegionTaxClasses.Where(x =>
+                    rates == null
+                    || !rates.Any(y => y.CountryId == x.CountryId && y.RegionId == x.RegionId)
+                )
                 .ToList();
 
             foreach (var rate in rates)
             {
                 if (rate.RegionId == null)
                 {
-                    item.SetCountryTaxRate(rate.CountryId.Value, rate.Rate);
+                    await item.SetCountryTaxClassAsync(
+                        rate.CountryId.Value,
+                        rate.Rate,
+                        rate.TaxCode
+                    );
                 }
                 else
                 {
-                    item.SetRegionTaxRate(rate.CountryId.Value, rate.RegionId.Value, rate.Rate);
+                    await item.SetRegionTaxClassAsync(
+                        rate.CountryId.Value,
+                        rate.RegionId.Value,
+                        rate.Rate,
+                        rate.TaxCode
+                    );
                 }
             }
 
@@ -142,32 +188,29 @@ namespace uSync.Umbraco.Commerce.Serializers
             {
                 if (rate.RegionId == null)
                 {
-                    item.ClearCountryTaxRate(rate.CountryId);
+                    await item.ClearCountryTaxClassAsync(rate.CountryId);
                 }
                 else
                 {
-                    item.ClearRegionTaxRate(rate.CountryId, rate.RegionId.Value);
+                    await item.ClearRegionTaxClassAsync(rate.CountryId, rate.RegionId.Value);
                 }
             }
         }
 
-        public override string GetItemAlias(TaxClassReadOnly item)
-            => item.Alias;
+        public override string GetItemAlias(TaxClassReadOnly item) => item.Alias;
 
-        public override void DoDeleteItem(TaxClassReadOnly item)
-            => _CommerceApi.DeleteTaxClass(item.Id);
+        public override Task DoDeleteItemAsync(TaxClassReadOnly item) =>
+            _CommerceApi.DeleteTaxClassAsync(item.Id);
 
-        public override TaxClassReadOnly DoFindItem(Guid key)
-            => _CommerceApi.GetTaxClass(key);
+        public override Task<TaxClassReadOnly> DoFindItemAsync(Guid key) =>
+            _CommerceApi.GetTaxClassAsync(key);
 
-        public override void DoSaveItem(TaxClassReadOnly item)
-        {
-            using (var uow = _uowProvider.Create())
+        public override Task DoSaveItemAsync(TaxClassReadOnly item) =>
+            _uowProvider.ExecuteAsync(async uow =>
             {
-                var entity = item.AsWritable(uow);
-                _CommerceApi.SaveTaxClass(entity);
+                var entity = await item.AsWritableAsync(uow);
+                await _CommerceApi.SaveTaxClassAsync(entity);
                 uow.Complete();
-            }
-        }
+            });
     }
 }

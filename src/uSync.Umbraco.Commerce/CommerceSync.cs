@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using uSync.BackOffice.Models;
+﻿using uSync.BackOffice.Models;
 
 namespace uSync.Umbraco.Commerce
 {
@@ -10,13 +8,12 @@ namespace uSync.Umbraco.Commerce
     /// <remarks>
     ///  Not strictly required, just lets people see its installed.
     /// </remarks>
-    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
-
     public class CommerceSync : ISyncAddOn
     {
         public string Name => "uSync.Umbraco.Commerce";
 
-        public string Version => "12.0.0";
+        public string Version =>
+            typeof(CommerceSync).Assembly.GetName().Version.ToString() ?? "16.0.0";
 
         public string Icon => "icon-store";
 

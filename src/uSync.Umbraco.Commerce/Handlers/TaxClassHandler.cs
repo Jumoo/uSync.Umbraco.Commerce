@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Commerce.Common.Events;
@@ -10,38 +11,64 @@ using Umbraco.Commerce.Core.Models;
 using uSync.BackOffice.Configuration;
 using uSync.BackOffice.Services;
 using uSync.BackOffice.SyncHandlers;
+using uSync.BackOffice.SyncHandlers.Interfaces;
+using uSync.BackOffice.SyncHandlers.Models;
 using uSync.Core;
-
 
 namespace uSync.Umbraco.Commerce.Handlers
 {
-    [SyncHandler("CommerceTaxClassHandler", "Taxes", "Commerce\\TaxClass", CommerceConstants.Priorites.TaxClass,
-        Icon = "icon-library", EntityType = CommerceConstants.UdiEntityType.TaxClass)]
-    public class TaxClassHandler : CommerceSyncHandlerBase<TaxClassReadOnly>, ISyncHandler
-        , IEventHandlerFor<TaxClassSavedNotification>
-        , IEventHandlerFor<TaxClassDeletedNotification>
+    [SyncHandler(
+        "CommerceTaxClassHandler",
+        "Taxes",
+        "Commerce\\TaxClass",
+        CommerceConstants.Priorites.TaxClass,
+        Icon = "icon-library",
+        EntityType = CommerceConstants.UdiEntityType.TaxClass
+    )]
+    public class TaxClassHandler
+        : CommerceSyncHandlerBase<TaxClassReadOnly>,
+            ISyncHandler,
+            IAsyncEventHandlerFor<TaxClassSavedNotification>,
+            IAsyncEventHandlerFor<TaxClassDeletedNotification>
     {
-        public TaxClassHandler(ICommerceApi CommerceApi, ILogger<CommerceSyncHandlerBase<TaxClassReadOnly>> logger, AppCaches appCaches, IShortStringHelper shortStringHelper, SyncFileService syncFileService, uSyncEventService mutexService, uSyncConfigService uSyncConfig, ISyncItemFactory itemFactory)
-            : base(CommerceApi, logger, appCaches, shortStringHelper, syncFileService, mutexService, uSyncConfig, itemFactory) { }
+        public TaxClassHandler(
+            ILogger<SyncHandlerRoot<TaxClassReadOnly, TaxClassReadOnly>> logger,
+            AppCaches appCaches,
+            IShortStringHelper shortStringHelper,
+            ISyncFileService syncFileService,
+            ISyncEventService mutexService,
+            ISyncConfigService uSyncConfig,
+            ISyncItemFactory itemFactory,
+            ICommerceApi commerceApi
+        )
+            : base(
+                logger,
+                appCaches,
+                shortStringHelper,
+                syncFileService,
+                mutexService,
+                uSyncConfig,
+                itemFactory,
+                commerceApi
+            ) { }
 
-        protected override Guid GetStoreId(TaxClassReadOnly item)
-            => item.StoreId;
+        protected override Guid GetStoreId(TaxClassReadOnly item) => item.StoreId;
 
-        protected override TaxClassReadOnly GetFromService(Guid key)
-            => _CommerceApi.GetTaxClass(key);
-        protected override void DeleteViaService(TaxClassReadOnly item)
-            => _CommerceApi.DeleteTaxClass(item.Id);
+        protected override Task<TaxClassReadOnly> GetFromServiceAsync(Guid key) =>
+            _CommerceApi.GetTaxClassAsync(key);
 
-        protected override string GetItemName(TaxClassReadOnly item)
-            => item.Name;
+        protected override Task DeleteViaServiceAsync(TaxClassReadOnly item) =>
+            _CommerceApi.DeleteTaxClassAsync(item.Id);
 
-        protected override IEnumerable<TaxClassReadOnly> GetByStore(Guid storeId)
-            => _CommerceApi.GetTaxClasses(storeId);
+        protected override string GetItemName(TaxClassReadOnly item) => item.Name;
 
-        public void Handle(TaxClassSavedNotification notification)
-            => CommerceItemSaved(notification.TaxClass);
+        protected override Task<IEnumerable<TaxClassReadOnly>> GetByStoreAsync(Guid storeId) =>
+            _CommerceApi.GetTaxClassesAsync(storeId);
 
-        public void Handle(TaxClassDeletedNotification notification)
-            => CommerceItemDeleted(notification.TaxClass);
+        public Task HandleAsync(TaxClassSavedNotification notification) =>
+            CommerceItemSavedAsync(notification.TaxClass);
+
+        public Task HandleAsync(TaxClassDeletedNotification notification) =>
+            CommerceItemDeletedAsync(notification.TaxClass);
     }
 }
