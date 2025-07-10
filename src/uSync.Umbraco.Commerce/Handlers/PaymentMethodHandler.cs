@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Commerce.Common.Events;
@@ -10,38 +11,64 @@ using Umbraco.Commerce.Core.Models;
 using uSync.BackOffice.Configuration;
 using uSync.BackOffice.Services;
 using uSync.BackOffice.SyncHandlers;
+using uSync.BackOffice.SyncHandlers.Interfaces;
+using uSync.BackOffice.SyncHandlers.Models;
 using uSync.Core;
 
 namespace uSync.Umbraco.Commerce.Handlers
 {
-    [SyncHandler("CommercePaymentMethodHandler", "Payment Methods", "Commerce\\PaymentMethod", CommerceConstants.Priorites.PaymentMethod,
-        Icon = "icon-multiple-credit-cards", EntityType = CommerceConstants.UdiEntityType.PaymentMethod)]
-    public class PaymentMethodHandler : CommerceSyncHandlerBase<PaymentMethodReadOnly>, ISyncHandler
-        , IEventHandlerFor<PaymentMethodSavedNotification>
-        , IEventHandlerFor<PaymentMethodDeletedNotification>
+    [SyncHandler(
+        "CommercePaymentMethodHandler",
+        "Payment Methods",
+        "Commerce\\PaymentMethod",
+        CommerceConstants.Priorites.PaymentMethod,
+        Icon = "icon-multiple-credit-cards",
+        EntityType = CommerceConstants.UdiEntityType.PaymentMethod
+    )]
+    public class PaymentMethodHandler
+        : CommerceSyncHandlerBase<PaymentMethodReadOnly>,
+            ISyncHandler,
+            IAsyncEventHandlerFor<PaymentMethodSavedNotification>,
+            IAsyncEventHandlerFor<PaymentMethodDeletedNotification>
     {
-        public PaymentMethodHandler(ICommerceApi CommerceApi, ILogger<CommerceSyncHandlerBase<PaymentMethodReadOnly>> logger, AppCaches appCaches, IShortStringHelper shortStringHelper, SyncFileService syncFileService, uSyncEventService mutexService, uSyncConfigService uSyncConfig, ISyncItemFactory itemFactory) : base(CommerceApi, logger, appCaches, shortStringHelper, syncFileService, mutexService, uSyncConfig, itemFactory)
-        { }
+        public PaymentMethodHandler(
+            ILogger<SyncHandlerRoot<PaymentMethodReadOnly, PaymentMethodReadOnly>> logger,
+            AppCaches appCaches,
+            IShortStringHelper shortStringHelper,
+            ISyncFileService syncFileService,
+            ISyncEventService mutexService,
+            ISyncConfigService uSyncConfig,
+            ISyncItemFactory itemFactory,
+            ICommerceApi commerceApi
+        )
+            : base(
+                logger,
+                appCaches,
+                shortStringHelper,
+                syncFileService,
+                mutexService,
+                uSyncConfig,
+                itemFactory,
+                commerceApi
+            ) { }
 
-        protected override Guid GetStoreId(PaymentMethodReadOnly item)
-            => item.StoreId;
+        protected override Guid GetStoreId(PaymentMethodReadOnly item) => item.StoreId;
 
-        protected override IEnumerable<PaymentMethodReadOnly> GetByStore(Guid storeId)
-            => _CommerceApi.GetPaymentMethods(storeId);
+        protected override Task<IEnumerable<PaymentMethodReadOnly>> GetByStoreAsync(Guid storeId) =>
+            _CommerceApi.GetPaymentMethodsAsync(storeId);
 
-        protected override void DeleteViaService(PaymentMethodReadOnly item)
-            => _CommerceApi.DeletePaymentMethod(item.Id);
+        protected override Task DeleteViaServiceAsync(PaymentMethodReadOnly item) =>
+            _CommerceApi.DeletePaymentMethodAsync(item.Id);
 
-        protected override PaymentMethodReadOnly GetFromService(Guid key)
-            => _CommerceApi.GetPaymentMethod(key);
+        protected override Task<PaymentMethodReadOnly> GetFromServiceAsync(Guid key) =>
+            _CommerceApi.GetPaymentMethodAsync(key);
 
-        protected override string GetItemName(PaymentMethodReadOnly item)
-            => item.Name;
+        protected override string GetItemName(PaymentMethodReadOnly item) => item.Name;
 
-        public void Handle(PaymentMethodSavedNotification notification)
-            => CommerceItemSaved(notification.PaymentMethod);
+        public Task HandleAsync(PaymentMethodSavedNotification notification) =>
+            CommerceItemSavedAsync(notification.PaymentMethod);
 
-        public void Handle(PaymentMethodDeletedNotification notification)
-            => CommerceItemDeleted(notification.PaymentMethod);
+        public Task HandleAsync(PaymentMethodDeletedNotification notification) =>
+            CommerceItemDeletedAsync(notification.PaymentMethod);
     }
 }

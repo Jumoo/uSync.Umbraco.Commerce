@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Commerce.Core.Api;
@@ -9,36 +10,60 @@ using Umbraco.Commerce.Core.Models;
 using uSync.BackOffice.Configuration;
 using uSync.BackOffice.Services;
 using uSync.BackOffice.SyncHandlers;
+using uSync.BackOffice.SyncHandlers.Interfaces;
+using uSync.BackOffice.SyncHandlers.Models;
 using uSync.Core;
 
 namespace uSync.Umbraco.Commerce.Handlers
 {
-    [SyncHandler("CommerceEmailTemplateHandler", "Email Templates", "Commerce\\EmailTemplate", CommerceConstants.Priorites.EmailTemplate,
-        Icon = "icon-mailbox", EntityType = CommerceConstants.UdiEntityType.EmailTemplate)]
+    [SyncHandler(
+        "CommerceEmailTemplateHandler",
+        "Email Templates",
+        "Commerce\\EmailTemplate",
+        CommerceConstants.Priorites.EmailTemplate,
+        Icon = "icon-mailbox",
+        EntityType = CommerceConstants.UdiEntityType.EmailTemplate
+    )]
     public class EmailTemplateHandler : CommerceSyncHandlerBase<EmailTemplateReadOnly>, ISyncHandler
     {
-        public EmailTemplateHandler(ICommerceApi CommerceApi, ILogger<CommerceSyncHandlerBase<EmailTemplateReadOnly>> logger, AppCaches appCaches, IShortStringHelper shortStringHelper, SyncFileService syncFileService, uSyncEventService mutexService, uSyncConfigService uSyncConfig, ISyncItemFactory itemFactory) : base(CommerceApi, logger, appCaches, shortStringHelper, syncFileService, mutexService, uSyncConfig, itemFactory)
-        { }
+        public EmailTemplateHandler(
+            ILogger<SyncHandlerRoot<EmailTemplateReadOnly, EmailTemplateReadOnly>> logger,
+            AppCaches appCaches,
+            IShortStringHelper shortStringHelper,
+            ISyncFileService syncFileService,
+            ISyncEventService mutexService,
+            ISyncConfigService uSyncConfig,
+            ISyncItemFactory itemFactory,
+            ICommerceApi commerceApi
+        )
+            : base(
+                logger,
+                appCaches,
+                shortStringHelper,
+                syncFileService,
+                mutexService,
+                uSyncConfig,
+                itemFactory,
+                commerceApi
+            ) { }
 
-        protected override Guid GetStoreId(EmailTemplateReadOnly item)
-            => item.StoreId;
+        protected override Guid GetStoreId(EmailTemplateReadOnly item) => item.StoreId;
 
-        protected override void DeleteViaService(EmailTemplateReadOnly item)
-            => _CommerceApi.DeleteEmailTemplate(item.Id);
+        protected override Task DeleteViaServiceAsync(EmailTemplateReadOnly item) =>
+            _CommerceApi.DeleteEmailTemplateAsync(item.Id);
 
-        protected override IEnumerable<EmailTemplateReadOnly> GetByStore(Guid storeId)
-            => _CommerceApi.GetEmailTemplates(storeId);
+        protected override Task<IEnumerable<EmailTemplateReadOnly>> GetByStoreAsync(Guid storeId) =>
+            _CommerceApi.GetEmailTemplatesAsync(storeId);
 
-        protected override EmailTemplateReadOnly GetFromService(Guid key)
-            => _CommerceApi.GetEmailTemplate(key);
+        protected override Task<EmailTemplateReadOnly> GetFromServiceAsync(Guid key) =>
+            _CommerceApi.GetEmailTemplateAsync(key);
 
-        protected override string GetItemName(EmailTemplateReadOnly item)
-            => item.Name;
+        protected override string GetItemName(EmailTemplateReadOnly item) => item.Name;
 
-        public void Handle(EmailTemplateSavedNotification notification)
-            => CommerceItemSaved(notification.EmailTemplate);
+        public Task HandleAsync(EmailTemplateSavedNotification notification) =>
+            CommerceItemSavedAsync(notification.EmailTemplate);
 
-        public void Handle(EmailTemplateDeletedNotification notification)
-            => CommerceItemDeleted(notification.EmailTemplate);
+        public Task HandleAsync(EmailTemplateDeletedNotification notification) =>
+            CommerceItemDeletedAsync(notification.EmailTemplate);
     }
 }

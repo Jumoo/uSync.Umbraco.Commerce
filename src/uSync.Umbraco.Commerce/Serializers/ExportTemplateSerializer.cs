@@ -1,9 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
+using System.Threading.Tasks;
 using System.Xml.Linq;
+using Microsoft.Extensions.Logging;
 using Umbraco.Commerce.Common;
 using Umbraco.Commerce.Core.Api;
 using Umbraco.Commerce.Core.Models;
+using Umbraco.Commerce.Extensions;
 using uSync.Core;
 using uSync.Core.Models;
 using uSync.Core.Serialization;
@@ -12,15 +14,27 @@ using uSync.Umbraco.Commerce.Extensions;
 
 namespace uSync.Umbraco.Commerce.Serializers
 {
-    [SyncSerializer("6D4C64D0-B840-47F7-AF92-61A1C86D892E", "Export Template Serializer", CommerceConstants.Serialization.ExportTemplate)]
-    public class ExportTemplateSerializer : CommerceSerializerBase<ExportTemplateReadOnly>, ISyncSerializer<ExportTemplateReadOnly>
+    [SyncSerializer(
+        "6D4C64D0-B840-47F7-AF92-61A1C86D892E",
+        "Export Template Serializer",
+        CommerceConstants.Serialization.ExportTemplate
+    )]
+    public class ExportTemplateSerializer
+        : CommerceSerializerBase<ExportTemplateReadOnly>,
+            ISyncSerializer<ExportTemplateReadOnly>
     {
-        public ExportTemplateSerializer(ICommerceApi CommerceApi, CommerceSyncSettingsAccessor settingsAccessor,
+        public ExportTemplateSerializer(
+            ICommerceApi CommerceApi,
+            CommerceSyncSettingsAccessor settingsAccessor,
             IUnitOfWorkProvider uowProvider,
-            ILogger<ExportTemplateSerializer> logger) : base(CommerceApi, settingsAccessor, uowProvider, logger)
-        { }
+            ILogger<ExportTemplateSerializer> logger
+        )
+            : base(CommerceApi, settingsAccessor, uowProvider, logger) { }
 
-        protected override SyncAttempt<XElement> SerializeCore(ExportTemplateReadOnly item, SyncSerializerOptions options)
+        protected override Task<SyncAttempt<XElement>> SerializeCoreAsync(
+            ExportTemplateReadOnly item,
+            SyncSerializerOptions options
+        )
         {
             var node = InitializeBaseNode(item, ItemAlias(item));
 
@@ -34,69 +48,80 @@ namespace uSync.Umbraco.Commerce.Serializers
             node.Add(new XElement(nameof(item.ExportStrategy), item.ExportStrategy));
             node.Add(new XElement(nameof(item.TemplateView), item.TemplateView));
 
-            return SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export);
+            return Task.FromResult(
+                SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export)
+            );
         }
 
-        public override bool IsValid(XElement node)
-            => base.IsValid(node)
-            && node.GetStoreId() != Guid.Empty;
+        public override bool IsValid(XElement node) =>
+            base.IsValid(node) && node.GetStoreId() != Guid.Empty;
 
-        protected override SyncAttempt<ExportTemplateReadOnly> DeserializeCore(XElement node, SyncSerializerOptions options)
+        protected override async Task<SyncAttempt<ExportTemplateReadOnly>> DeserializeCoreAsync(
+            XElement node,
+            SyncSerializerOptions options
+        )
         {
-            var readOnlyItem = FindItem(node);
+            var readOnlyItem = await FindItemAsync(node);
 
             var alias = node.GetAlias();
             var id = node.GetKey();
             var name = node.Element(nameof(readOnlyItem.Name)).ValueOrDefault(alias);
             var storeId = node.GetStoreId();
 
-            using (var uow = _uowProvider.Create())
+            return await _uowProvider.ExecuteAsync(async uow =>
             {
                 ExportTemplate item;
                 if (readOnlyItem == null)
                 {
-                    item = ExportTemplate.Create(uow, id, storeId, alias, name);
+                    item = await ExportTemplate.CreateAsync(uow, id, storeId, alias, name);
                 }
                 else
                 {
-                    item = readOnlyItem.AsWritable(uow);
-                    item.SetAlias(alias)
-                         .SetName(name);
+                    item = await readOnlyItem.AsWritableAsync(uow);
+                    await item.SetAliasAsync(alias).SetNameAsync(name);
                 }
 
-                item.SetCategory(node.Element(nameof(item.Category)).ValueOrDefault(item.Category));
-                item.SetFileMimeType(node.Element(nameof(item.FileMimeType)).ValueOrDefault(item.FileMimeType));
-                item.SetFileExtension(node.Element(nameof(item.FileExtension)).ValueOrDefault(item.FileExtension));
-                item.SetExportStrategy(node.Element(nameof(item.ExportStrategy)).ValueOrDefault(item.ExportStrategy));
-                item.SetTemplateView(node.Element(nameof(item.TemplateView)).ValueOrDefault(item.TemplateView));
+                await item.SetCategoryAsync(
+                        node.Element(nameof(item.Category)).ValueOrDefault(item.Category)
+                    )
+                    .SetFileMimeTypeAsync(
+                        node.Element(nameof(item.FileMimeType)).ValueOrDefault(item.FileMimeType)
+                    )
+                    .SetFileExtensionAsync(
+                        node.Element(nameof(item.FileExtension)).ValueOrDefault(item.FileExtension)
+                    )
+                    .SetExportStrategyAsync(
+                        node.Element(nameof(item.ExportStrategy))
+                            .ValueOrDefault(item.ExportStrategy)
+                    )
+                    .SetTemplateViewAsync(
+                        node.Element(nameof(item.TemplateView)).ValueOrDefault(item.TemplateView)
+                    );
 
-                _CommerceApi.SaveExportTemplate(item);
+                await _CommerceApi.SaveExportTemplateAsync(item);
 
                 uow.Complete();
 
                 return SyncAttemptSucceed(name, item.AsReadOnly(), ChangeType.Import);
-            }
+            });
         }
 
-        // 
+        //
 
-        public override string GetItemAlias(ExportTemplateReadOnly item)
-            => item.Alias;
+        public override string GetItemAlias(ExportTemplateReadOnly item) => item.Alias;
 
-        public override void DoDeleteItem(ExportTemplateReadOnly item)
-            => _CommerceApi.DeleteExportTemplate(item.Id);
+        public override Task DoDeleteItemAsync(ExportTemplateReadOnly item) =>
+            _CommerceApi.DeleteExportTemplateAsync(item.Id);
 
-        public override ExportTemplateReadOnly DoFindItem(Guid key)
-            => _CommerceApi.GetExportTemplate(key);
+        public override Task<ExportTemplateReadOnly> DoFindItemAsync(Guid key) =>
+            _CommerceApi.GetExportTemplateAsync(key);
 
-        public override void DoSaveItem(ExportTemplateReadOnly item)
-        {
-            using (var uow = _uowProvider.Create())
+        public override Task DoSaveItemAsync(ExportTemplateReadOnly item) =>
+            _uowProvider.ExecuteAsync(async uow =>
             {
-                var entity = item.AsWritable(uow);
-                _CommerceApi.SaveExportTemplate(entity);
+                var entity = await item.AsWritableAsync(uow);
+                await _CommerceApi.SaveExportTemplateAsync(entity);
                 uow.Complete();
-            }
-        }
+            });
     }
 }

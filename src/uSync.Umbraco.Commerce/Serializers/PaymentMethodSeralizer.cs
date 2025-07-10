@@ -1,11 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Xml.Linq;
+using Microsoft.Extensions.Logging;
 using Umbraco.Commerce.Common;
 using Umbraco.Commerce.Core.Api;
 using Umbraco.Commerce.Core.Models;
+using Umbraco.Commerce.Extensions;
 using uSync.Core;
 using uSync.Core.Models;
 using uSync.Core.Serialization;
@@ -15,19 +17,27 @@ using StringExtensions = Umbraco.Commerce.Extensions.StringExtensions;
 
 namespace uSync.Umbraco.Commerce.Serializers
 {
-    [SyncSerializer("707A16D7-AAA8-4399-8CF4-BEC82B8F6C8E", "PaymentMethod Serializer", CommerceConstants.Serialization.PaymentMethod)]
-    public class PaymentMethodSeralizer : MethodSerializerBase<PaymentMethodReadOnly>, ISyncSerializer<PaymentMethodReadOnly>
+    [SyncSerializer(
+        "707A16D7-AAA8-4399-8CF4-BEC82B8F6C8E",
+        "PaymentMethod Serializer",
+        CommerceConstants.Serialization.PaymentMethod
+    )]
+    public class PaymentMethodSeralizer
+        : MethodSerializerBase<PaymentMethodReadOnly>,
+            ISyncSerializer<PaymentMethodReadOnly>
     {
-        public PaymentMethodSeralizer(ICommerceApi CommerceApi, CommerceSyncSettingsAccessor settingsAccessor,
+        public PaymentMethodSeralizer(
+            ICommerceApi CommerceApi,
+            CommerceSyncSettingsAccessor settingsAccessor,
             IUnitOfWorkProvider uowProvider,
-#if NETFRAMEWORK
-            ILogger logger) : base(CommerceApi, settingsAccessor, uowProvider, logger)
-#else
-            ILogger<PaymentMethodSeralizer> logger) : base(CommerceApi, settingsAccessor, uowProvider, logger)
-#endif
-        { }
+            ILogger<PaymentMethodSeralizer> logger
+        )
+            : base(CommerceApi, settingsAccessor, uowProvider, logger) { }
 
-        protected override SyncAttempt<XElement> SerializeCore(PaymentMethodReadOnly item, SyncSerializerOptions options)
+        protected override Task<SyncAttempt<XElement>> SerializeCoreAsync(
+            PaymentMethodReadOnly item,
+            SyncSerializerOptions options
+        )
         {
             var node = InitializeBaseNode(item, ItemAlias(item));
 
@@ -39,7 +49,9 @@ namespace uSync.Umbraco.Commerce.Serializers
 
             node.Add(new XElement(nameof(item.CanCancelPayments), item.CanCancelPayments));
             node.Add(new XElement(nameof(item.CanCapturePayments), item.CanCapturePayments));
-            node.Add(new XElement(nameof(item.CanFetchPaymentStatuses), item.CanFetchPaymentStatuses));
+            node.Add(
+                new XElement(nameof(item.CanFetchPaymentStatuses), item.CanFetchPaymentStatuses)
+            );
             node.Add(new XElement(nameof(item.CanRefundPayments), item.CanRefundPayments));
 
             node.Add(SerializeProviderSettings(item.PaymentProviderSettings));
@@ -51,7 +63,9 @@ namespace uSync.Umbraco.Commerce.Serializers
             node.Add(new XElement(nameof(item.Sku), item.Sku));
             node.Add(new XElement(nameof(item.TaxClassId), item.TaxClassId));
 
-            return SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export);
+            return Task.FromResult(
+                SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export)
+            );
         }
 
         private XElement SerializeProviderSettings(IReadOnlyDictionary<string, string> values)
@@ -60,74 +74,102 @@ namespace uSync.Umbraco.Commerce.Serializers
 
             if (values != null && values.Any())
             {
-                foreach (var setting in values.Where(x => !StringExtensions.InvariantContains(_settingsAccessor.Settings.PaymentMethods.IgnoreSettings, x.Key)))
+                foreach (
+                    var setting in values.Where(x =>
+                        !StringExtensions.InvariantContains(
+                            _settingsAccessor.Settings.PaymentMethods.IgnoreSettings,
+                            x.Key
+                        )
+                    )
+                )
                 {
-                    root.Add(new XElement("Setting",
-                        new XElement("Key", setting.Key),
-                        new XElement("Value", setting.Value)));
+                    root.Add(
+                        new XElement(
+                            "Setting",
+                            new XElement("Key", setting.Key),
+                            new XElement("Value", setting.Value)
+                        )
+                    );
                 }
             }
 
             return root;
         }
 
-        public override bool IsValid(XElement node)
-            => base.IsValid(node)
-            && node.GetStoreId() != Guid.Empty;
+        public override bool IsValid(XElement node) =>
+            base.IsValid(node) && node.GetStoreId() != Guid.Empty;
 
-        protected override SyncAttempt<PaymentMethodReadOnly> DeserializeCore(XElement node, SyncSerializerOptions options)
+        protected override async Task<SyncAttempt<PaymentMethodReadOnly>> DeserializeCoreAsync(
+            XElement node,
+            SyncSerializerOptions options
+        )
         {
-            var readonlyItem = FindItem(node);
+            var readonlyItem = await FindItemAsync(node);
 
             var alias = node.GetAlias();
             var id = node.GetKey();
             var name = node.Element(nameof(readonlyItem.Name)).ValueOrDefault(alias);
             var storeId = node.GetStoreId();
-            var providerAlias = node.Element(nameof(readonlyItem.PaymentProviderAlias)).ValueOrDefault(string.Empty);
+            var providerAlias = node.Element(nameof(readonlyItem.PaymentProviderAlias))
+                .ValueOrDefault(string.Empty);
 
-            using (var uow = _uowProvider.Create())
+            return await _uowProvider.ExecuteAsync(async uow =>
             {
                 PaymentMethod item;
                 if (readonlyItem == null)
                 {
-                    item = PaymentMethod.Create(uow, id, storeId, alias, name, providerAlias);
+                    item = await PaymentMethod.CreateAsync(
+                        uow,
+                        id,
+                        storeId,
+                        alias,
+                        name,
+                        providerAlias
+                    );
                 }
                 else
                 {
-                    item = readonlyItem.AsWritable(uow);
-                    item.SetAlias(alias)
-                        .SetName(name);
+                    item = await readonlyItem.AsWritableAsync(uow);
+                    await item.SetAliasAsync(alias).SetNameAsync(name);
                 }
 
-                item.SetSortOrder(node.Element(nameof(item.SortOrder)).ValueOrDefault(item.SortOrder));
-                item.SetImage(node.Element(nameof(item.ImageId)).ValueOrDefault(item.ImageId));
-                item.SetSku(node.Element(nameof(item.Sku)).ValueOrDefault(item.Sku));
-                item.SetTaxClass(node.Element(nameof(item.TaxClassId)).ValueOrDefault(item.TaxClassId));
-
-                item.ToggleFeatures(
-                    node.Element(nameof(item.CanFetchPaymentStatuses)).ValueOrDefault(item.CanFetchPaymentStatuses),
-                    node.Element(nameof(item.CanCapturePayments)).ValueOrDefault(item.CanCapturePayments),
-                    node.Element(nameof(item.CanCancelPayments)).ValueOrDefault(item.CanCancelPayments),
-                    node.Element(nameof(item.CanRefundPayments)).ValueOrDefault(item.CanRefundPayments));
+                await item.SetSortOrderAsync(
+                        node.Element(nameof(item.SortOrder)).ValueOrDefault(item.SortOrder)
+                    )
+                    .SetImageAsync(node.Element(nameof(item.ImageId)).ValueOrDefault(item.ImageId))
+                    .SetSkuAsync(node.Element(nameof(item.Sku)).ValueOrDefault(item.Sku))
+                    .SetTaxClassAsync(
+                        node.Element(nameof(item.TaxClassId)).ValueOrDefault(item.TaxClassId)
+                    )
+                    .ToggleFeaturesAsync(
+                        node.Element(nameof(item.CanFetchPaymentStatuses))
+                            .ValueOrDefault(item.CanFetchPaymentStatuses),
+                        node.Element(nameof(item.CanCapturePayments))
+                            .ValueOrDefault(item.CanCapturePayments),
+                        node.Element(nameof(item.CanCancelPayments))
+                            .ValueOrDefault(item.CanCancelPayments),
+                        node.Element(nameof(item.CanRefundPayments))
+                            .ValueOrDefault(item.CanRefundPayments)
+                    );
 
                 // do the payment method stuff
-                DeserializeProviderSettings(node, item);
+                await DeserializeProviderSettingsAsync(node, item);
 
                 // Country regions
-                DeserializeCountryRegions(node, item);
+                await DeserializeCountryRegionsAsync(node, item);
 
-                // currency 
-                DeserializePrices(node, item);
+                // currency
+                await DeserializePricesAsync(node, item);
 
-                _CommerceApi.SavePaymentMethod(item);
+                await _CommerceApi.SavePaymentMethodAsync(item);
 
                 uow.Complete();
 
                 return SyncAttemptSucceed(name, item.AsReadOnly(), ChangeType.Import);
-            }
+            });
         }
 
-        private void DeserializeProviderSettings(XElement node, PaymentMethod item)
+        private async Task DeserializeProviderSettingsAsync(XElement node, PaymentMethod item)
         {
             var settings = new Dictionary<string, string>();
 
@@ -145,16 +187,20 @@ namespace uSync.Umbraco.Commerce.Serializers
                 }
             }
 
-            item.SetSettings(settings, SetBehavior.Merge);
+            await item.SetSettingsAsync(settings, SetBehavior.Merge);
         }
 
-        private void DeserializeCountryRegions(XElement node, PaymentMethod item)
+        private async Task DeserializeCountryRegionsAsync(XElement node, PaymentMethod item)
         {
             var countryRegions = GetCountryRegionsList(node);
 
-            var valuesToRemove = item.AllowedCountryRegions
-                .Where(x => countryRegions == null || !item.AllowedCountryRegions.Any(y => y.CountryId == x.CountryId
-                     && y.RegionId == y.RegionId))
+            var valuesToRemove = item
+                .AllowedCountryRegions.Where(x =>
+                    countryRegions == null
+                    || !item.AllowedCountryRegions.Any(y =>
+                        y.CountryId == x.CountryId && y.RegionId == y.RegionId
+                    )
+                )
                 .ToList();
 
             if (countryRegions.Count > 0)
@@ -163,11 +209,11 @@ namespace uSync.Umbraco.Commerce.Serializers
                 {
                     if (acr.RegionId != null)
                     {
-                        item.AllowInRegion(acr.CountryId, acr.RegionId.Value);
+                        await item.AllowInRegionAsync(acr.CountryId, acr.RegionId.Value);
                     }
                     else
                     {
-                        item.AllowInCountry(acr.CountryId);
+                        await item.AllowInCountryAsync(acr.CountryId);
                     }
                 }
             }
@@ -176,41 +222,54 @@ namespace uSync.Umbraco.Commerce.Serializers
             {
                 if (acr.RegionId != null)
                 {
-                    item.DisallowInRegion(acr.CountryId, acr.RegionId.Value);
+                    await item.DisallowInRegionAsync(acr.CountryId, acr.RegionId.Value);
                 }
                 else
                 {
-                    item.DisallowInCountry(acr.CountryId);
+                    await item.DisallowInCountryAsync(acr.CountryId);
                 }
             }
         }
 
-        private void DeserializePrices(XElement node, PaymentMethod item)
+        private async Task DeserializePricesAsync(XElement node, PaymentMethod item)
         {
             var prices = GetServicePrices(node);
 
-            var pricesToRemove = item.Prices
-                .Where(x => item.Prices == null
-                || !prices.Any(y => y.CountryId == x.CountryId
-                                && y.RegionId == x.RegionId
-                                && y.CurrencyId == y.CurrencyId))
+            var pricesToRemove = item
+                .Prices.Where(x =>
+                    item.Prices == null
+                    || !prices.Any(y =>
+                        y.CountryId == x.CountryId
+                        && y.RegionId == x.RegionId
+                        && y.CurrencyId == y.CurrencyId
+                    )
+                )
                 .ToList();
 
             foreach (var price in prices)
             {
                 if (price.CountryId == null && price.RegionId == null)
                 {
-                    item.SetDefaultPriceForCurrency(price.CurrencyId.Value, price.Value);
+                    await item.SetDefaultPriceForCurrencyAsync(price.CurrencyId.Value, price.Value);
                 }
                 else
                 {
                     if (price.RegionId != null)
                     {
-                        item.SetRegionPriceForCurrency(price.CountryId.Value, price.RegionId.Value, price.CurrencyId.Value, price.Value);
+                        await item.SetRegionPriceForCurrencyAsync(
+                            price.CountryId.Value,
+                            price.RegionId.Value,
+                            price.CurrencyId.Value,
+                            price.Value
+                        );
                     }
                     else
                     {
-                        item.SetCountryPriceForCurrency(price.CountryId.Value, price.CurrencyId.Value, price.Value);
+                        await item.SetCountryPriceForCurrencyAsync(
+                            price.CountryId.Value,
+                            price.CurrencyId.Value,
+                            price.Value
+                        );
                     }
                 }
             }
@@ -219,36 +278,40 @@ namespace uSync.Umbraco.Commerce.Serializers
             {
                 if (price.CountryId == null && price.RegionId == null)
                 {
-                    item.ClearDefaultPriceForCurrency(price.CurrencyId);
+                    await item.ClearDefaultPriceForCurrencyAsync(price.CurrencyId);
                 }
                 else if (price.CountryId != null && price.RegionId == null)
                 {
-                    item.ClearCountryPriceForCurrency(price.CountryId.Value, price.CurrencyId);
+                    await item.ClearCountryPriceForCurrencyAsync(
+                        price.CountryId.Value,
+                        price.CurrencyId
+                    );
                 }
                 else
                 {
-                    item.ClearRegionPriceForCurrency(price.CountryId.Value, price.RegionId.Value, price.CurrencyId);
+                    await item.ClearRegionPriceForCurrencyAsync(
+                        price.CountryId.Value,
+                        price.RegionId.Value,
+                        price.CurrencyId
+                    );
                 }
             }
         }
 
-        public override string GetItemAlias(PaymentMethodReadOnly item)
-            => item.Alias;
+        public override string GetItemAlias(PaymentMethodReadOnly item) => item.Alias;
 
-        public override void DoDeleteItem(PaymentMethodReadOnly item)
-            => _CommerceApi.DeletePaymentMethod(item.Id);
+        public override Task DoDeleteItemAsync(PaymentMethodReadOnly item) =>
+            _CommerceApi.DeletePaymentMethodAsync(item.Id);
 
-        public override PaymentMethodReadOnly DoFindItem(Guid key)
-            => _CommerceApi.GetPaymentMethod(key);
+        public override Task<PaymentMethodReadOnly> DoFindItemAsync(Guid key) =>
+            _CommerceApi.GetPaymentMethodAsync(key);
 
-        public override void DoSaveItem(PaymentMethodReadOnly item)
-        {
-            using (var uow = _uowProvider.Create())
+        public override Task DoSaveItemAsync(PaymentMethodReadOnly item) =>
+            _uowProvider.ExecuteAsync(async uow =>
             {
-                var entity = item.AsWritable(uow);
-                _CommerceApi.SavePaymentMethod(entity);
+                var entity = await item.AsWritableAsync(uow);
+                await _CommerceApi.SavePaymentMethodAsync(entity);
                 uow.Complete();
-            }
-        }
+            });
     }
 }

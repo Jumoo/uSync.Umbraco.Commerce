@@ -1,39 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
-
-    <PropertyGroup>
-        <TargetFrameworks>net8.0;net7.0;net6.0</TargetFrameworks>
-        <Authors>Umbraco Community</Authors>
-        <Company></Company>
-        <Copyright></Copyright>
-        <Description>uSync serializers for Umbraco Commerce</Description>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <RepositoryUrl>https://github.com/Jumoo/uSync.Umbraco.Commerce</RepositoryUrl>
-        <PackageTags>umbraco, umbracocommerce, ecommerce, usync, umbraco-marketplace</PackageTags>
-        <RepositoryType>git</RepositoryType>
-		<StaticWebAssetBasePath>/</StaticWebAssetBasePath>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<PackageId>uSync.Umbraco.Commerce</PackageId>
-    </PropertyGroup>
-
-	<ItemGroup Condition=" '$(TargetFramework)' == 'net6.0' ">
-		<PackageReference Include="Umbraco.Commerce" Version="10.0.0" />
-		<PackageReference Include="Umbraco.Commerce.Cms.Startup" Version="10.0.0" />
-		<PackageReference Include="uSync.Core" Version="10.0.0" />
-		<PackageReference Include="uSync.BackOffice" Version="10.0.0" />
-	</ItemGroup>
-
-	<ItemGroup Condition=" '$(TargetFramework)' == 'net7.0' ">
-		<PackageReference Include="Umbraco.Commerce" Version="12.0.0" />
-		<PackageReference Include="Umbraco.Commerce.Cms.Startup" Version="12.0.0" />
-		<PackageReference Include="uSync.Core" Version="12.0.2" />
-		<PackageReference Include="uSync.BackOffice" Version="12.0.2" />
-	</ItemGroup>
-
-	<ItemGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
-		<PackageReference Include="Umbraco.Commerce" Version="13.1.0" />
-		<PackageReference Include="Umbraco.Commerce.Cms.Startup" Version="13.1.0" />
-		<PackageReference Include="uSync.Core" Version="13.0.0" />
-		<PackageReference Include="uSync.BackOffice" Version="13.0.0" />
-	</ItemGroup>
-
+  <PropertyGroup>
+    <TargetFrameworks>net9.0</TargetFrameworks>
+    <Authors>Umbraco Community</Authors>
+    <Company></Company>
+    <Copyright></Copyright>
+    <Description>uSync serializers for Umbraco Commerce</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/Jumoo/uSync.Umbraco.Commerce</RepositoryUrl>
+    <PackageTags>umbraco, umbracocommerce, ecommerce, usync, umbraco-marketplace</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <StaticWebAssetBasePath>/</StaticWebAssetBasePath>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>uSync.Umbraco.Commerce</PackageId>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Umbraco.Commerce" Version="16.0.0" />
+    <PackageReference Include="Umbraco.Commerce.Cms.Startup" Version="16.0.0" />
+    <PackageReference Include="uSync.Core" Version="16.0.0" />
+    <PackageReference Include="uSync.BackOffice" Version="16.0.0" />
+  </ItemGroup>
 </Project>

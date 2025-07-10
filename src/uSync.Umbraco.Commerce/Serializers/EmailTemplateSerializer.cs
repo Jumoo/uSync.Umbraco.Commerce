@@ -1,9 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
+using System.Threading.Tasks;
 using System.Xml.Linq;
+using Microsoft.Extensions.Logging;
 using Umbraco.Commerce.Common;
 using Umbraco.Commerce.Core.Api;
 using Umbraco.Commerce.Core.Models;
+using Umbraco.Commerce.Extensions;
 using uSync.Core;
 using uSync.Core.Models;
 using uSync.Core.Serialization;
@@ -12,16 +14,27 @@ using uSync.Umbraco.Commerce.Extensions;
 
 namespace uSync.Umbraco.Commerce.Serializers
 {
-    [SyncSerializer("BAEB7691-9AC2-4F42-92DA-2F8CD42B66DE", "Email Template Serializer", CommerceConstants.Serialization.EmailTemplate)]
-
-    public class EmailTemplateSerializer : CommerceSerializerBase<EmailTemplateReadOnly>, ISyncSerializer<EmailTemplateReadOnly>
+    [SyncSerializer(
+        "BAEB7691-9AC2-4F42-92DA-2F8CD42B66DE",
+        "Email Template Serializer",
+        CommerceConstants.Serialization.EmailTemplate
+    )]
+    public class EmailTemplateSerializer
+        : CommerceSerializerBase<EmailTemplateReadOnly>,
+            ISyncSerializer<EmailTemplateReadOnly>
     {
-        public EmailTemplateSerializer(ICommerceApi CommerceApi, CommerceSyncSettingsAccessor settingsAccessor,
+        public EmailTemplateSerializer(
+            ICommerceApi CommerceApi,
+            CommerceSyncSettingsAccessor settingsAccessor,
             IUnitOfWorkProvider uowProvider,
-            ILogger<EmailTemplateSerializer> logger) : base(CommerceApi, settingsAccessor, uowProvider, logger)
-        { }
+            ILogger<EmailTemplateSerializer> logger
+        )
+            : base(CommerceApi, settingsAccessor, uowProvider, logger) { }
 
-        protected override SyncAttempt<XElement> SerializeCore(EmailTemplateReadOnly item, SyncSerializerOptions options)
+        protected override Task<SyncAttempt<XElement>> SerializeCoreAsync(
+            EmailTemplateReadOnly item,
+            SyncSerializerOptions options
+        )
         {
             var node = InitializeBaseNode(item, ItemAlias(item));
 
@@ -42,79 +55,101 @@ namespace uSync.Umbraco.Commerce.Serializers
             node.Add(new XElement(nameof(item.Subject), item.Subject));
             node.Add(new XElement(nameof(item.TemplateView), item.TemplateView));
 
-            // new Umbraco.Commerce 
+            // new Umbraco.Commerce
             node.Add(new XElement(nameof(item.ReplyToAddresses), item.ReplyToAddresses));
 
-            return SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export);
+            return Task.FromResult(
+                SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export)
+            );
         }
 
-        public override bool IsValid(XElement node)
-            => base.IsValid(node)
-            && node.GetStoreId() != Guid.Empty;
+        public override bool IsValid(XElement node) =>
+            base.IsValid(node) && node.GetStoreId() != Guid.Empty;
 
-        protected override SyncAttempt<EmailTemplateReadOnly> DeserializeCore(XElement node, SyncSerializerOptions options)
+        protected override async Task<SyncAttempt<EmailTemplateReadOnly>> DeserializeCoreAsync(
+            XElement node,
+            SyncSerializerOptions options
+        )
         {
-            var readOnlyItem = FindItem(node);
+            var readOnlyItem = await FindItemAsync(node);
 
             var alias = node.GetAlias();
             var id = node.GetKey();
             var name = node.Element(nameof(readOnlyItem.Name)).ValueOrDefault(alias);
             var storeId = node.GetStoreId();
 
-            using (var uow = _uowProvider.Create())
+            return await _uowProvider.ExecuteAsync(async uow =>
             {
                 EmailTemplate item;
                 if (readOnlyItem == null)
                 {
-                    item = EmailTemplate.Create(uow, id, storeId, alias, name);
+                    item = await EmailTemplate.CreateAsync(uow, id, storeId, alias, name);
                 }
                 else
                 {
-                    item = readOnlyItem.AsWritable(uow);
-                    item.SetAlias(alias)
-                         .SetName(name);
+                    item = await readOnlyItem.AsWritableAsync(uow);
+                    await item.SetAliasAsync(alias).SetNameAsync(name);
                 }
 
-                item.SetCategory(node.Element(nameof(item.Category)).ValueOrDefault(item.Category));
-                item.SetSenderName(node.Element(nameof(item.SenderName)).ValueOrDefault(item.SenderName));
-                item.SetSenderAddress(node.Element(nameof(item.SenderAddress)).ValueOrDefault(item.SenderAddress));
-                item.SetSendToCustomer(node.Element(nameof(item.SendToCustomer)).ValueOrDefault(item.SendToCustomer));
-                item.SetSortOrder(node.Element(nameof(item.SortOrder)).ValueOrDefault(item.SortOrder));
-                item.SetSubject(node.Element(nameof(item.Subject)).ValueOrDefault(item.Subject));
-                item.SetTemplateView(node.Element(nameof(item.TemplateView)).ValueOrDefault(item.TemplateView));
+                await item.SetCategoryAsync(
+                        node.Element(nameof(item.Category)).ValueOrDefault(item.Category)
+                    )
+                    .SetSenderNameAsync(
+                        node.Element(nameof(item.SenderName)).ValueOrDefault(item.SenderName)
+                    )
+                    .SetSenderAddressAsync(
+                        node.Element(nameof(item.SenderAddress)).ValueOrDefault(item.SenderAddress)
+                    )
+                    .SetSendToCustomerAsync(
+                        node.Element(nameof(item.SendToCustomer))
+                            .ValueOrDefault(item.SendToCustomer)
+                    )
+                    .SetSortOrderAsync(
+                        node.Element(nameof(item.SortOrder)).ValueOrDefault(item.SortOrder)
+                    )
+                    .SetSubjectAsync(
+                        node.Element(nameof(item.Subject)).ValueOrDefault(item.Subject)
+                    )
+                    .SetTemplateViewAsync(
+                        node.Element(nameof(item.TemplateView)).ValueOrDefault(item.TemplateView)
+                    )
+                    .SetToAddressesAsync(
+                        DeserializeList<string>(node, nameof(item.ToAddresses), "Address")
+                    )
+                    .SetBccAddressesAsync(
+                        DeserializeList<string>(node, nameof(item.BccAddresses), "Address")
+                    )
+                    .SetCcAddressesAsync(
+                        DeserializeList<string>(node, nameof(item.CcAddresses), "Address")
+                    )
+                    .SetReplyToAddressesAsync(
+                        DeserializeList<string>(node, nameof(item.ReplyToAddresses), "Addresses")
+                    );
 
-                item.SetToAddresses(DeserializeList<string>(node, nameof(item.ToAddresses), "Address"));
-                item.SetBccAddresses(DeserializeList<string>(node, nameof(item.BccAddresses), "Address"));
-                item.SetCcAddresses(DeserializeList<string>(node, nameof(item.CcAddresses), "Address"));
-                item.SetReplyToAddresses(DeserializeList<string>(node, nameof(item.ReplyToAddresses), "Addresses"));
-
-                _CommerceApi.SaveEmailTemplate(item);
+                await _CommerceApi.SaveEmailTemplateAsync(item);
 
                 uow.Complete();
 
                 return SyncAttemptSucceed(name, item.AsReadOnly(), ChangeType.Import);
-            }
+            });
         }
 
-        // 
+        //
 
-        public override string GetItemAlias(EmailTemplateReadOnly item)
-            => item.Alias;
+        public override string GetItemAlias(EmailTemplateReadOnly item) => item.Alias;
 
-        public override void DoDeleteItem(EmailTemplateReadOnly item)
-            => _CommerceApi.DeleteEmailTemplate(item.Id);
+        public override Task DoDeleteItemAsync(EmailTemplateReadOnly item) =>
+            _CommerceApi.DeleteEmailTemplateAsync(item.Id);
 
-        public override EmailTemplateReadOnly DoFindItem(Guid key)
-            => _CommerceApi.GetEmailTemplate(key);
+        public override Task<EmailTemplateReadOnly> DoFindItemAsync(Guid key) =>
+            _CommerceApi.GetEmailTemplateAsync(key);
 
-        public override void DoSaveItem(EmailTemplateReadOnly item)
-        {
-            using (var uow = _uowProvider.Create())
+        public override Task DoSaveItemAsync(EmailTemplateReadOnly item) =>
+            _uowProvider.ExecuteAsync(async uow =>
             {
-                var entity = item.AsWritable(uow);
-                _CommerceApi.SaveEmailTemplate(entity);
+                var entity = await item.AsWritableAsync(uow);
+                await _CommerceApi.SaveEmailTemplateAsync(entity);
                 uow.Complete();
-            }
-        }
+            });
     }
 }

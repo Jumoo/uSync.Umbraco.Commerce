@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Commerce.Core.Models;
@@ -11,14 +12,19 @@ namespace uSync.Umbraco.Commerce.Dependencies
     {
         public UmbracoObjectTypes ObjectType => UmbracoObjectTypes.Unknown;
 
-        public IEnumerable<uSyncDependency> GetDependencies(OrderStatusReadOnly item, DependencyFlags flags)
+        public Task<IEnumerable<uSyncDependency>> GetDependenciesAsync(
+            OrderStatusReadOnly item,
+            DependencyFlags flags
+        )
         {
-            return new uSyncDependency
+            var dependency = new uSyncDependency
             {
                 Name = item.Name,
                 Order = CommerceConstants.Priorites.OrderStatus,
-                Udi = Udi.Create(CommerceConstants.UdiEntityType.OrderStatus, item.Id)
-            }.AsEnumerableOfOne();
+                Udi = Udi.Create(CommerceConstants.UdiEntityType.OrderStatus, item.Id),
+            };
+
+            return Task.FromResult(dependency.AsEnumerableOfOne());
         }
     }
 }

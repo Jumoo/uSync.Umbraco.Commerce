@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Commerce.Common.Events;
@@ -10,40 +11,65 @@ using Umbraco.Commerce.Core.Models;
 using uSync.BackOffice.Configuration;
 using uSync.BackOffice.Services;
 using uSync.BackOffice.SyncHandlers;
+using uSync.BackOffice.SyncHandlers.Interfaces;
+using uSync.BackOffice.SyncHandlers.Models;
 using uSync.Core;
-
 
 namespace uSync.Umbraco.Commerce.Handlers
 {
-    [SyncHandler("CommerceShippingMethodHandler", "Shipping Methods", "Commerce\\ShippingMethod", CommerceConstants.Priorites.ShippingMethod,
-        Icon = "icon-truck", EntityType = CommerceConstants.UdiEntityType.ShippingMethod)]
-    public class ShippingMethodHandler : CommerceSyncHandlerBase<ShippingMethodReadOnly>, ISyncHandler
-        , IEventHandlerFor<ShippingMethodSavedNotification>
-        , IEventHandlerFor<ShippingMethodDeletedNotification>
+    [SyncHandler(
+        "CommerceShippingMethodHandler",
+        "Shipping Methods",
+        "Commerce\\ShippingMethod",
+        CommerceConstants.Priorites.ShippingMethod,
+        Icon = "icon-truck",
+        EntityType = CommerceConstants.UdiEntityType.ShippingMethod
+    )]
+    public class ShippingMethodHandler
+        : CommerceSyncHandlerBase<ShippingMethodReadOnly>,
+            ISyncHandler,
+            IAsyncEventHandlerFor<ShippingMethodSavedNotification>,
+            IAsyncEventHandlerFor<ShippingMethodDeletedNotification>
     {
-        protected override Guid GetStoreId(ShippingMethodReadOnly item)
-            => item.StoreId;
+        public ShippingMethodHandler(
+            ILogger<SyncHandlerRoot<ShippingMethodReadOnly, ShippingMethodReadOnly>> logger,
+            AppCaches appCaches,
+            IShortStringHelper shortStringHelper,
+            ISyncFileService syncFileService,
+            ISyncEventService mutexService,
+            ISyncConfigService uSyncConfig,
+            ISyncItemFactory itemFactory,
+            ICommerceApi commerceApi
+        )
+            : base(
+                logger,
+                appCaches,
+                shortStringHelper,
+                syncFileService,
+                mutexService,
+                uSyncConfig,
+                itemFactory,
+                commerceApi
+            ) { }
 
-        public ShippingMethodHandler(ICommerceApi CommerceApi, ILogger<CommerceSyncHandlerBase<ShippingMethodReadOnly>> logger, AppCaches appCaches, IShortStringHelper shortStringHelper, SyncFileService syncFileService, uSyncEventService mutexService, uSyncConfigService uSyncConfig, ISyncItemFactory itemFactory)
-            : base(CommerceApi, logger, appCaches, shortStringHelper, syncFileService, mutexService, uSyncConfig, itemFactory)
-        { }
+        protected override Guid GetStoreId(ShippingMethodReadOnly item) => item.StoreId;
 
-        protected override IEnumerable<ShippingMethodReadOnly> GetByStore(Guid storeId)
-            => _CommerceApi.GetShippingMethods(storeId);
+        protected override Task<IEnumerable<ShippingMethodReadOnly>> GetByStoreAsync(
+            Guid storeId
+        ) => _CommerceApi.GetShippingMethodsAsync(storeId);
 
-        protected override void DeleteViaService(ShippingMethodReadOnly item)
-            => _CommerceApi.DeleteShippingMethod(item.Id);
+        protected override Task DeleteViaServiceAsync(ShippingMethodReadOnly item) =>
+            _CommerceApi.DeleteShippingMethodAsync(item.Id);
 
-        protected override ShippingMethodReadOnly GetFromService(Guid key)
-            => _CommerceApi.GetShippingMethod(key);
+        protected override Task<ShippingMethodReadOnly> GetFromServiceAsync(Guid key) =>
+            _CommerceApi.GetShippingMethodAsync(key);
 
-        protected override string GetItemName(ShippingMethodReadOnly item)
-            => item.Name;
+        protected override string GetItemName(ShippingMethodReadOnly item) => item.Name;
 
-        public void Handler(ShippingMethodSavedNotification notification)
-            => CommerceItemSaved(notification.ShippingMethod);
+        public Task Handle(ShippingMethodSavedNotification notification) =>
+            CommerceItemSavedAsync(notification.ShippingMethod);
 
-        public void Handler(ShippingMethodDeletedNotification notification)
-            => CommerceItemDeleted(notification.ShippingMethod);
+        public Task Handle(ShippingMethodDeletedNotification notification) =>
+            CommerceItemDeletedAsync(notification.ShippingMethod);
     }
 }

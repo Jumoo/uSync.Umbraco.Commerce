@@ -1,8 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Xml.Linq;
+using Microsoft.Extensions.Logging;
 using Umbraco.Commerce.Common;
 using Umbraco.Commerce.Core.Api;
 using Umbraco.Commerce.Core.Models;
@@ -15,10 +16,9 @@ using uSync.Umbraco.Commerce.Configuration;
 namespace uSync.Umbraco.Commerce.Serializers
 {
     /// <summary>
-    ///  base for Commerce Serializers for uSync. 
+    ///  base for Commerce Serializers for uSync.
     /// </summary>
-    public abstract class CommerceSerializerBase<TObject>
-        : SyncSerializerRoot<TObject>
+    public abstract class CommerceSerializerBase<TObject> : SyncSerializerRoot<TObject>
         where TObject : EntityBase
     {
         protected ICommerceApi _CommerceApi;
@@ -33,47 +33,42 @@ namespace uSync.Umbraco.Commerce.Serializers
             ICommerceApi CommerceApi,
             CommerceSyncSettingsAccessor settingsAccessor,
             IUnitOfWorkProvider uowProvider,
-            ILogger<CommerceSerializerBase<TObject>> logger) : base(logger)
+            ILogger<CommerceSerializerBase<TObject>> logger
+        )
+            : base(logger)
         {
             _CommerceApi = CommerceApi;
             _settingsAccessor = settingsAccessor;
             _uowProvider = uowProvider;
         }
 
-        public override Guid ItemKey(TObject item)
-            => item.Id;
+        public override Guid ItemKey(TObject item) => item.Id;
 
-        public override string ItemAlias(TObject item)
-            => GetItemAlias(item);
+        public override string ItemAlias(TObject item) => GetItemAlias(item);
 
-        public override TObject FindItem(string alias)
-            => null;
+        public override Task<TObject> FindItemAsync(string alias) => null;
 
-        public override TObject FindItem(int id)
-            => null;
+        public override Task<TObject> FindItemAsync(Guid key) => DoFindItemAsync(key);
 
-        public override TObject FindItem(Guid key)
-            => DoFindItem(key);
+        public override Task DeleteItemAsync(TObject item) => DoDeleteItemAsync(item);
 
-        public override void DeleteItem(TObject item)
-            => DoDeleteItem(item);
+        public override Task SaveItemAsync(TObject item) => DoSaveItemAsync(item);
 
-        public override void SaveItem(TObject item)
-            => DoSaveItem(item);
+        public virtual string GetItemAlias(TObject item) => null;
 
-        public virtual string GetItemAlias(TObject item)
-            => null;
+        public abstract Task DoDeleteItemAsync(TObject item);
 
-        public abstract void DoDeleteItem(TObject item);
+        public abstract Task<TObject> DoFindItemAsync(Guid key);
 
-        public abstract TObject DoFindItem(Guid key);
+        public virtual Task<TObject> DoFindItemAsync(string alias) => null;
 
-        public virtual TObject DoFindItem(string alias)
-            => null;
+        public abstract Task DoSaveItemAsync(TObject item);
 
-        public abstract void DoSaveItem(TObject item);
-
-        protected XElement SerailizeList<TResult>(string collectionName, string elementName, IEnumerable<TResult> items)
+        protected XElement SerailizeList<TResult>(
+            string collectionName,
+            string elementName,
+            IEnumerable<TResult> items
+        )
         {
             var root = new XElement(collectionName);
 
@@ -88,7 +83,11 @@ namespace uSync.Umbraco.Commerce.Serializers
             return root;
         }
 
-        protected IEnumerable<TResult> DeserializeList<TResult>(XElement node, string collectionName, string elementName)
+        protected IEnumerable<TResult> DeserializeList<TResult>(
+            XElement node,
+            string collectionName,
+            string elementName
+        )
         {
             var root = node.Element(collectionName);
             if (root == null || !root.HasElements)
@@ -105,12 +104,30 @@ namespace uSync.Umbraco.Commerce.Serializers
             return items;
         }
 
-        protected SyncAttempt<T> SyncAttemptSucceed<T>(string name, T item, ChangeType change, bool saved = false, IList<uSyncChange> changes = null)
+        protected SyncAttempt<T> SyncAttemptSucceed<T>(
+            string name,
+            T item,
+            ChangeType change,
+            bool saved = false,
+            IList<uSyncChange> changes = null
+        )
         {
-            return SyncAttempt<T>.Succeed(name, item, change, null, saved, changes ?? _noSyncChanges);
+            return SyncAttempt<T>.Succeed(
+                name,
+                item,
+                change,
+                null,
+                saved,
+                changes ?? _noSyncChanges
+            );
         }
 
-        protected SyncAttempt<T> SyncAttemptSucceedIf<T>(bool condition, string name, T item, ChangeType change)
+        protected SyncAttempt<T> SyncAttemptSucceedIf<T>(
+            bool condition,
+            string name,
+            T item,
+            ChangeType change
+        )
         {
             return SyncAttempt<T>.SucceedIf(condition, name, item, _itemType, change);
         }
