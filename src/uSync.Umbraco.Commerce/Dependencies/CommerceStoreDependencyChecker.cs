@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dazinator.Extensions.FileProviders.InMemory.Directory;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Cms.Core;
@@ -36,12 +37,13 @@ namespace uSync.Umbraco.Commerce.Dependencies
             });
 
             // a store has a lot of dependencies,
+            items.AddRange(GetLocations(item.Id));
             items.AddRange(GetOrderStatuses(item.Id));
-            items.AddRange(GetCurrencies(item.Id));
             items.AddRange(GetShippingMethods(item.Id));
+            items.AddRange(GetPaymentMethods(item.Id));
             items.AddRange(GetCountries(item.Id));
             items.AddRange(GetRegions(item.Id));
-            items.AddRange(GetPaymentMethods(item.Id));
+            items.AddRange(GetCurrencies(item.Id));
             items.AddRange(GetTaxClasses(item.Id));
             items.AddRange(GetEmailTemplates(item.Id));
             items.AddRange(GetExportTemplates(item.Id));
@@ -139,6 +141,15 @@ namespace uSync.Umbraco.Commerce.Dependencies
                     Name = x.Name,
                     Order = CommerceConstants.Priorites.PrintTemplate,
                     Udi = Udi.Create(CommerceConstants.UdiEntityType.PrintTemplate, x.Id)
+                });
+
+        private IEnumerable<uSyncDependency> GetLocations(Guid storeId)
+            => _CommerceApi.GetLocations(storeId)
+                .Select(x => new uSyncDependency
+                {
+                    Name = x.Name,
+                    Order = CommerceConstants.Priorites.Location,
+                    Udi = Udi.Create(CommerceConstants.UdiEntityType.Location, x.Id)
                 });
 
 
