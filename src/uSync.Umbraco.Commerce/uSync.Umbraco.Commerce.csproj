@@ -32,8 +32,8 @@
 	<ItemGroup Condition=" '$(TargetFramework)' == 'net8.0' ">
 		<PackageReference Include="Umbraco.Commerce" Version="13.1.0" />
 		<PackageReference Include="Umbraco.Commerce.Cms.Startup" Version="13.1.0" />
-		<PackageReference Include="uSync.Core" Version="13.0.0" />
-		<PackageReference Include="uSync.BackOffice" Version="13.0.0" />
+		<PackageReference Include="uSync.Core" Version="13.3.2" />
+		<PackageReference Include="uSync.BackOffice" Version="13.3.2" />
 	</ItemGroup>
 
 </Project>

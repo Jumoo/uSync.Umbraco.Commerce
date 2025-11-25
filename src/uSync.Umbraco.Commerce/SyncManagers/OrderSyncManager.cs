@@ -144,8 +144,15 @@ namespace uSync.Umbraco.Commerce.SyncManagers
         /// </summary>
         public SyncEntityInfo GetSyncInfo(string entityType)
         {
-            var x = entityType;
-            return null;
+            if (entityType != CommerceConstants.UdiEntityType.Store) return null;
+
+            return new SyncEntityInfo
+            {
+                DoNotPickContainers = true,
+                PickerView = "/App_Plugins/UmbracoCommerce/backoffice/views/dialogs/storepicker.html",
+                SectionAlias = "Settings",
+                TreeAlias = Alias,
+            };
         }
 
         /// <summary>
