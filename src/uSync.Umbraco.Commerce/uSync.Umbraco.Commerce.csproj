@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
   <PropertyGroup>
-    <TargetFrameworks>net9.0</TargetFrameworks>
+    <TargetFrameworks>net10.0</TargetFrameworks>
     <Authors>Umbraco Community</Authors>
     <Company></Company>
     <Copyright></Copyright>
@@ -14,9 +14,9 @@
     <PackageId>uSync.Umbraco.Commerce</PackageId>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Umbraco.Commerce" Version="16.0.0" />
-    <PackageReference Include="Umbraco.Commerce.Cms.Startup" Version="16.0.0" />
-    <PackageReference Include="uSync.Core" Version="16.0.0" />
-    <PackageReference Include="uSync.BackOffice" Version="16.0.0" />
+    <PackageReference Include="Umbraco.Commerce" Version="17.*" />
+    <PackageReference Include="Umbraco.Commerce.Cms.Startup" Version="17.*" />
+    <PackageReference Include="uSync.Core" Version="17.*" />
+    <PackageReference Include="uSync.BackOffice" Version="17.*" />
   </ItemGroup>
 </Project>

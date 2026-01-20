@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/Sites/">
+    <Project Path="../Commerce.Site.Thirteen/Commerce.Site.Thirteen.csproj" />
+    <Project Path="../Commerce.Site/Commerce.Site.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+    <File Path="azure-pipelines.yml" />
+    <File Path="LICENSE.md" />
+    <File Path="NuGet.config" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="src/uSync.Umbraco.Commerce/uSync.Umbraco.Commerce.csproj" />
+</Solution>
