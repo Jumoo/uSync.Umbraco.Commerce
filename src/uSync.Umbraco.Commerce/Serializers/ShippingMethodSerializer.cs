@@ -52,9 +52,10 @@ namespace uSync.Umbraco.Commerce.Serializers
             node.Add(new XElement(nameof(item.TaxClassId), item.TaxClassId));
             node.Add(new XElement(nameof(item.CalculationMode), (int)item.CalculationMode));
             node.Add(new XElement(nameof(item.ShippingProviderAlias), item.ShippingProviderAlias));
-            item.calc
             node.Add(SerializeShippingProviderSettings(item.ShippingProviderSettings));
-            node.Add(new XElement(nameof(item.ShippingProviderSettings), new SortedDictionary<string, string>(item.ShippingProviderSettings.ToDictionary(x => x.Key, x => x.Value));
+            node.Add(new XElement(nameof(item.ShippingProviderSettings),
+                new SortedDictionary<string, string>(item.ShippingProviderSettings.ToDictionary(x => x.Key, x => x.Value))
+            ));
 
             return Task.FromResult(
                 SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export)

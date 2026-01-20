@@ -41,6 +41,7 @@ namespace uSync.Umbraco.Commerce.Dependencies
                 }
             );
 
+            var locations = GetLocations(item.Id);
             var orderStatuses = GetOrderStatusesAsync(item.Id);
             var currencies = GetCurrenciesAsync(item.Id);
             var shippingMethods = GetShippingMethodsAsync(item.Id);
@@ -53,6 +54,7 @@ namespace uSync.Umbraco.Commerce.Dependencies
             var printTemplates = GetPrintTemplatesAsync(item.Id);
 
             await Task.WhenAll(
+                locations,
                 orderStatuses,
                 currencies,
                 shippingMethods,
@@ -78,6 +80,14 @@ namespace uSync.Umbraco.Commerce.Dependencies
 
             return items;
         }
+
+        private async Task<IEnumerable<uSyncDependency>> GetLocations(Guid storeId) =>
+            (await _CommerceApi.GetLocationsAsync(storeId)).Select(x => new uSyncDependency
+            {
+                Name = x.Name,
+                Order = CommerceConstants.Priorites.Location,
+                Udi = Udi.Create(CommerceConstants.UdiEntityType.Location, x.Id),
+            });
 
         public async Task<IEnumerable<uSyncDependency>> GetOrderStatusesAsync(Guid storeId) =>
             (await _CommerceApi.GetOrderStatusesAsync(storeId)).Select(x => new uSyncDependency
