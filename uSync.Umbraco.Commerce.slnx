@@ -1,7 +1,6 @@
 <Solution>
   <Folder Name="/Sites/">
-    <Project Path="../Commerce.Site.Thirteen/Commerce.Site.Thirteen.csproj" />
-    <Project Path="../Commerce.Site/Commerce.Site.csproj" />
+    <Project Path="test/Commerce.Site/Commerce.Site.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />

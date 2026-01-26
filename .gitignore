@@ -190,3 +190,6 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 Source/.vs/config/applicationhost.config
+
+# Umbraco Project ignores
+test/
