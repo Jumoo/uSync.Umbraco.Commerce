@@ -18,7 +18,7 @@ namespace uSync.Umbraco.Commerce.Handlers
 {
     [SyncHandler(
         "CommerceExportTemplateHandler",
-        "Export Templates",
+        "Export",
         "Commerce\\ExportTemplate",
         CommerceConstants.Priorites.ExportTemplate,
         Icon = "icon-sharing-iphone",

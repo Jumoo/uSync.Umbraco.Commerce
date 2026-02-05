@@ -19,7 +19,7 @@ namespace uSync.Umbraco.Commerce.Handlers
 {
     [SyncHandler(
         "CommercePrintTemplateHandler",
-        "Print Templates",
+        "Print",
         "Commerce\\PrintTemplate",
         CommerceConstants.Priorites.PrintTemplate,
         Icon = "icon-print",

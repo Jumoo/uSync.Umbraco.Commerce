@@ -19,7 +19,7 @@ namespace uSync.Umbraco.Commerce.Handlers
 {
     [SyncHandler(
         "CommercePaymentMethodHandler",
-        "Payment Methods",
+        "Payment",
         "Commerce\\PaymentMethod",
         CommerceConstants.Priorites.PaymentMethod,
         Icon = "icon-multiple-credit-cards",

@@ -19,7 +19,7 @@ namespace uSync.Umbraco.Commerce.Handlers
 {
     [SyncHandler(
         "CommerceShippingMethodHandler",
-        "Shipping Methods",
+        "Shipping",
         "Commerce\\ShippingMethod",
         CommerceConstants.Priorites.ShippingMethod,
         Icon = "icon-truck",

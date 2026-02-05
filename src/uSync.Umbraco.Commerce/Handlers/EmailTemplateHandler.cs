@@ -18,7 +18,7 @@ namespace uSync.Umbraco.Commerce.Handlers
 {
     [SyncHandler(
         "CommerceEmailTemplateHandler",
-        "Email Templates",
+        "Email",
         "Commerce\\EmailTemplate",
         CommerceConstants.Priorites.EmailTemplate,
         Icon = "icon-mailbox",

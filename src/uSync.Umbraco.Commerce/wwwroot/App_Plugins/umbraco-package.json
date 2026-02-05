@@ -1,0 +1,14 @@
+{
+  "name": "uSync.Umbraco.Commerce",
+  "extensions": [
+    {
+      "type": "localization",
+      "alias": "uSync.Umbraco.Commerce.Localize.En",
+      "name": "English",
+      "meta": {
+        "culture": "en"
+      },
+      "js": "/App_Plugins/Commerce.uSync/Localization/en.js"
+    }
+  ]
+}
