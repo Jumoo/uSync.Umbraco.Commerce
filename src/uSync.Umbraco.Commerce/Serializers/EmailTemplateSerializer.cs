@@ -144,6 +144,9 @@ namespace uSync.Umbraco.Commerce.Serializers
         public override Task<EmailTemplateReadOnly> DoFindItemAsync(Guid key) =>
             _CommerceApi.GetEmailTemplateAsync(key);
 
+        public override async Task<EmailTemplateReadOnly> DoFindItemAsync(string alias, Guid storeId)
+            => await _CommerceApi.GetEmailTemplateAsync(storeId, alias);
+
         public override Task DoSaveItemAsync(EmailTemplateReadOnly item) =>
             _uowProvider.ExecuteAsync(async uow =>
             {

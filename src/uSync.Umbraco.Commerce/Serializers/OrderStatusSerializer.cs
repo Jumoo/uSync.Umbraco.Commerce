@@ -99,6 +99,9 @@ namespace uSync.Umbraco.Commerce.Serializers
         public override Task<OrderStatusReadOnly> DoFindItemAsync(Guid key) =>
             _CommerceApi.GetOrderStatusAsync(key);
 
+        public override Task<OrderStatusReadOnly> DoFindItemAsync(string alias, Guid storeId)
+            => _CommerceApi.GetOrderStatusAsync(storeId, alias);
+
         public override Task DoSaveItemAsync(OrderStatusReadOnly item) =>
             _uowProvider.ExecuteAsync(async uow =>
             {

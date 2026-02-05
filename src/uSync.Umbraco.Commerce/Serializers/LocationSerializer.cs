@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
@@ -72,7 +73,7 @@ public class CommerceLocationSerializer
             Location location;
             if (readonlyItem is null)
             {
-                location = await Location.CreateAsync(uow, storeId, alias, name);
+                location = await Location.CreateAsync(uow, key, storeId, alias, name);
             }
             else
             {
@@ -114,6 +115,9 @@ public class CommerceLocationSerializer
 
     public override Task<LocationReadOnly> DoFindItemAsync(Guid key) =>
         _CommerceApi.GetLocationAsync(key);
+
+    public override async Task<LocationReadOnly> DoFindItemAsync(string alias, Guid storeId)
+        => await _CommerceApi.GetLocationAsync(storeId, alias);
 
     public override Task DoSaveItemAsync(LocationReadOnly item) =>
         _uowProvider.ExecuteAsync(async uow =>

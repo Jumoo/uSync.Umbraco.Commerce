@@ -145,6 +145,9 @@ namespace uSync.Umbraco.Commerce.Serializers
         public override Task<CurrencyReadOnly> DoFindItemAsync(Guid key) =>
             _CommerceApi.GetCurrencyAsync(key);
 
+        public override async Task<CurrencyReadOnly> DoFindItemAsync(string alias, Guid storeId)
+            => await _CommerceApi.GetCurrencyAsync(storeId, alias);
+
         public override Task DoSaveItemAsync(CurrencyReadOnly item) =>
             _uowProvider.ExecuteAsync(async uow =>
             {

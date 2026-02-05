@@ -133,6 +133,22 @@ namespace uSync.Umbraco.Commerce.Serializers
         public override Task<RegionReadOnly> DoFindItemAsync(Guid key) =>
             _CommerceApi.GetRegionAsync(key);
 
+        /// <summary>
+        ///  regions are store / and country specifc so when finding them by alias, we have to 
+        ///  lookup these other bits. 
+        /// </summary>
+        public override async Task<RegionReadOnly> DoFinalFindAttempt(XElement node)
+        {
+            var code = node.GetAlias();
+            var storeId = node.GetStoreId();
+            var countryId = node.Element(nameof(RegionReadOnly.CountryId)).ValueOrDefault(Guid.Empty);
+
+            if (string.IsNullOrEmpty(code) || storeId == Guid.Empty || countryId == Guid.Empty)
+                return null;
+
+            return await _CommerceApi.GetRegionAsync(storeId, countryId, code);
+        }
+
         public override Task DoSaveItemAsync(RegionReadOnly item) =>
             _uowProvider.ExecuteAsync(async uow =>
             {

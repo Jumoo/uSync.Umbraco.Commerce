@@ -103,7 +103,8 @@ namespace uSync.Umbraco.Commerce.Serializers
         public override Task<PrintTemplateReadOnly> DoFindItemAsync(Guid key) =>
             _CommerceApi.GetPrintTemplateAsync(key);
 
-        public override Task<PrintTemplateReadOnly> DoFindItemAsync(string alias) => null;
+        public override Task<PrintTemplateReadOnly> DoFindItemAsync(string alias, Guid storeId)
+            => _CommerceApi.GetPrintTemplateAsync(storeId, alias);
 
         public override Task DoSaveItemAsync(PrintTemplateReadOnly item) =>
             _uowProvider.ExecuteAsync(async uow =>

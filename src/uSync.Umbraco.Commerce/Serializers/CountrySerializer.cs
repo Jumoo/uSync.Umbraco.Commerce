@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Umbraco.Commerce.Common;
 using Umbraco.Commerce.Core.Api;
@@ -151,6 +153,9 @@ namespace uSync.Umbraco.Commerce.Serializers
 
         public override Task<CountryReadOnly> DoFindItemAsync(Guid key) =>
             _CommerceApi.GetCountryAsync(key);
+
+        public override async Task<CountryReadOnly> DoFindItemAsync(string alias, Guid storeId)
+            => await _CommerceApi.GetCountryAsync(storeId, alias);
 
         public override Task DoSaveItemAsync(CountryReadOnly item) =>
             _uowProvider.ExecuteAsync(async uow =>

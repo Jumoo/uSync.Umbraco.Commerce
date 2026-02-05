@@ -205,6 +205,9 @@ namespace uSync.Umbraco.Commerce.Serializers
         public override Task<TaxClassReadOnly> DoFindItemAsync(Guid key) =>
             _CommerceApi.GetTaxClassAsync(key);
 
+        public override Task<TaxClassReadOnly> DoFindItemAsync(string alias, Guid storeId)
+            => _CommerceApi.GetTaxClassAsync(storeId, alias);
+
         public override Task DoSaveItemAsync(TaxClassReadOnly item) =>
             _uowProvider.ExecuteAsync(async uow =>
             {

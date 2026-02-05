@@ -74,10 +74,10 @@ namespace uSync.Umbraco.Commerce.Serializers
 
             var alias = node.GetAlias();
             var id = node.GetKey();
-            var name = node.Element(nameof(readonlyItem.Name)).ValueOrDefault(alias);
-            var calculationMode = node.Element(nameof(readonlyItem.CalculationMode))
-                .ValueOrDefault(readonlyItem.CalculationMode);
-            var shippingProviderAlias = node.Element(nameof(readonlyItem.ShippingProviderAlias))
+            var name = node.Element(nameof(ShippingMethodReadOnly.Name)).ValueOrDefault(alias);
+            var calculationMode = node.Element(nameof(ShippingMethodReadOnly.CalculationMode))
+                .ValueOrDefault(readonlyItem?.CalculationMode ?? ShippingCalculationMode.Fixed);
+            var shippingProviderAlias = node.Element(nameof(ShippingMethodReadOnly.ShippingProviderAlias))
                 .ValueOrDefault(string.Empty);
             var storeId = node.GetStoreId();
 
@@ -280,6 +280,9 @@ namespace uSync.Umbraco.Commerce.Serializers
 
         public override Task<ShippingMethodReadOnly> DoFindItemAsync(Guid key) =>
             _CommerceApi.GetShippingMethodAsync(key);
+
+        public override Task<ShippingMethodReadOnly> DoFindItemAsync(string alias, Guid storeId)
+            => _CommerceApi.GetShippingMethodAsync(storeId, alias);
 
         public override Task DoSaveItemAsync(ShippingMethodReadOnly item) =>
             _uowProvider.ExecuteAsync(async uow =>

@@ -305,6 +305,9 @@ namespace uSync.Umbraco.Commerce.Serializers
         public override Task<PaymentMethodReadOnly> DoFindItemAsync(Guid key) =>
             _CommerceApi.GetPaymentMethodAsync(key);
 
+        public override Task<PaymentMethodReadOnly> DoFindItemAsync(string alias, Guid storeId)
+            => _CommerceApi.GetPaymentMethodAsync(storeId, alias);
+
         public override Task DoSaveItemAsync(PaymentMethodReadOnly item) =>
             _uowProvider.ExecuteAsync(async uow =>
             {

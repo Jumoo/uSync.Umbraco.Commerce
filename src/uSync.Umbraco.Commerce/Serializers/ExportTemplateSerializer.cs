@@ -116,6 +116,9 @@ namespace uSync.Umbraco.Commerce.Serializers
         public override Task<ExportTemplateReadOnly> DoFindItemAsync(Guid key) =>
             _CommerceApi.GetExportTemplateAsync(key);
 
+        public override async Task<ExportTemplateReadOnly> DoFindItemAsync(string alias, Guid storeId)
+            => await _CommerceApi.GetExportTemplateAsync(storeId, alias);
+
         public override Task DoSaveItemAsync(ExportTemplateReadOnly item) =>
             _uowProvider.ExecuteAsync(async uow =>
             {

@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
+
+using Umbraco.Cms.Api.Management.ViewModels.RelationType.Item;
 using Umbraco.Commerce.Common;
 using Umbraco.Commerce.Core.Api;
 using Umbraco.Commerce.Core.Models;
@@ -12,6 +14,7 @@ using uSync.Core;
 using uSync.Core.Models;
 using uSync.Core.Serialization;
 using uSync.Umbraco.Commerce.Configuration;
+using uSync.Umbraco.Commerce.Extensions;
 
 namespace uSync.Umbraco.Commerce.Serializers
 {
@@ -46,7 +49,7 @@ namespace uSync.Umbraco.Commerce.Serializers
 
         public override string ItemAlias(TObject item) => GetItemAlias(item);
 
-        public override Task<TObject> FindItemAsync(string alias) => null;
+        public override Task<TObject> FindItemAsync(string alias) => Task.FromResult<TObject>(null);
 
         public override Task<TObject> FindItemAsync(Guid key) => DoFindItemAsync(key);
 
@@ -60,9 +63,36 @@ namespace uSync.Umbraco.Commerce.Serializers
 
         public abstract Task<TObject> DoFindItemAsync(Guid key);
 
-        public virtual Task<TObject> DoFindItemAsync(string alias) => null;
+        public virtual Task<TObject> DoFindItemAsync(string alias) => Task.FromResult<TObject>(null);
+
+        public virtual Task<TObject> DoFindItemAsync(string alias, Guid storeId) => Task.FromResult<TObject>(null);
 
         public abstract Task DoSaveItemAsync(TObject item);
+
+        public virtual Task<TObject> DoFinalFindAttempt(XElement node) => Task.FromResult<TObject>(null);
+
+        /// <summary>
+        ///  for most lookups we also need the store id. so we override this and always pass the store
+        ///  id to the FindItemAsync that takes the alias.
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns></returns>
+        public override async Task<TObject> FindItemAsync(XElement node)
+        {
+            var item = await base.FindItemAsync(node);
+            if (item != null) return item;
+
+            var alias = node.GetAlias();
+            var store = node.GetStoreId();
+
+            if (string.IsNullOrEmpty(alias) || store == Guid.Empty)
+                return null;
+
+            item =  await DoFindItemAsync(alias, store);
+            if (item != null) return item;
+
+            return await DoFinalFindAttempt(node);
+        }
 
         protected XElement SerailizeList<TResult>(
             string collectionName,
