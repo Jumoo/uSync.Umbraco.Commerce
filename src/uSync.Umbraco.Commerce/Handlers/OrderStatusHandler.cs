@@ -24,7 +24,9 @@ namespace uSync.Umbraco.Commerce.Handlers
         Icon = "icon-file-cabinet",
         EntityType = CommerceConstants.UdiEntityType.OrderStatus
     )]
-    public class OrderStatusHandler : CommerceSyncHandlerBase<OrderStatusReadOnly>, ISyncHandler
+    public class OrderStatusHandler : CommerceSyncHandlerBase<OrderStatusReadOnly>, ISyncHandler,
+        ISyncCommerceEventHandler<OrderStatusSavedNotification>,
+        ISyncCommerceEventHandler<OrderStatusDeletedNotification>
     {
         public OrderStatusHandler(
             ILogger<SyncHandlerRoot<OrderStatusReadOnly, OrderStatusReadOnly>> logger,
@@ -60,10 +62,10 @@ namespace uSync.Umbraco.Commerce.Handlers
 
         protected override string GetItemName(OrderStatusReadOnly item) => item.Name;
 
-        public Task HandleAsync(OrderStatusSavedNotification notification) =>
+        public Task HandleNotificationAsync(OrderStatusSavedNotification notification) =>
             CommerceItemSavedAsync(notification.OrderStatus);
 
-        public Task HandleAsync(OrderStatusDeletedNotification notification) =>
+        public Task HandleNotificationAsync(OrderStatusDeletedNotification notification) =>
             CommerceItemDeletedAsync(notification.OrderStatus);
     }
 }

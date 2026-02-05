@@ -28,8 +28,8 @@ namespace uSync.Umbraco.Commerce.Handlers
     public class PaymentMethodHandler
         : CommerceSyncHandlerBase<PaymentMethodReadOnly>,
             ISyncHandler,
-            IAsyncEventHandlerFor<PaymentMethodSavedNotification>,
-            IAsyncEventHandlerFor<PaymentMethodDeletedNotification>
+            ISyncCommerceEventHandler<PaymentMethodSavedNotification>,
+            ISyncCommerceEventHandler<PaymentMethodDeletedNotification>
     {
         public PaymentMethodHandler(
             ILogger<SyncHandlerRoot<PaymentMethodReadOnly, PaymentMethodReadOnly>> logger,
@@ -65,10 +65,10 @@ namespace uSync.Umbraco.Commerce.Handlers
 
         protected override string GetItemName(PaymentMethodReadOnly item) => item.Name;
 
-        public Task HandleAsync(PaymentMethodSavedNotification notification) =>
+        public Task HandleNotificationAsync(PaymentMethodSavedNotification notification) =>
             CommerceItemSavedAsync(notification.PaymentMethod);
 
-        public Task HandleAsync(PaymentMethodDeletedNotification notification) =>
+        public Task HandleNotificationAsync(PaymentMethodDeletedNotification notification) =>
             CommerceItemDeletedAsync(notification.PaymentMethod);
     }
 }

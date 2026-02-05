@@ -28,8 +28,8 @@ namespace uSync.Umbraco.Commerce.Handlers
     public class ShippingMethodHandler
         : CommerceSyncHandlerBase<ShippingMethodReadOnly>,
             ISyncHandler,
-            IAsyncEventHandlerFor<ShippingMethodSavedNotification>,
-            IAsyncEventHandlerFor<ShippingMethodDeletedNotification>
+            ISyncCommerceEventHandler<ShippingMethodSavedNotification>,
+            ISyncCommerceEventHandler<ShippingMethodDeletedNotification>
     {
         public ShippingMethodHandler(
             ILogger<SyncHandlerRoot<ShippingMethodReadOnly, ShippingMethodReadOnly>> logger,
@@ -66,10 +66,10 @@ namespace uSync.Umbraco.Commerce.Handlers
 
         protected override string GetItemName(ShippingMethodReadOnly item) => item.Name;
 
-        public Task Handle(ShippingMethodSavedNotification notification) =>
+        public Task HandleNotificationAsync(ShippingMethodSavedNotification notification) =>
             CommerceItemSavedAsync(notification.ShippingMethod);
 
-        public Task Handle(ShippingMethodDeletedNotification notification) =>
+        public Task HandleNotificationAsync(ShippingMethodDeletedNotification notification) =>
             CommerceItemDeletedAsync(notification.ShippingMethod);
     }
 }

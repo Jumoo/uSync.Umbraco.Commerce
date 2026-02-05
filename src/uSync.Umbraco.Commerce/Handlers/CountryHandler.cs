@@ -1,12 +1,16 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+
 using Umbraco.Cms.Core.Cache;
+using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Strings;
 using Umbraco.Commerce.Core.Api;
 using Umbraco.Commerce.Core.Events.Notification;
 using Umbraco.Commerce.Core.Models;
+
 using uSync.BackOffice.Configuration;
 using uSync.BackOffice.Services;
 using uSync.BackOffice.SyncHandlers;
@@ -35,7 +39,9 @@ namespace uSync.Umbraco.Commerce.Handlers
     public class CountryHandler
         : CommerceSyncHandlerBase<CountryReadOnly>,
             ISyncPostImportHandler,
-            ISyncHandler
+            ISyncHandler,
+            ISyncCommerceEventHandler<CountrySavedNotification>,
+            ISyncCommerceEventHandler<CountryDeletedNotification>
     {
         public CountryHandler(
             ILogger<SyncHandlerRoot<CountryReadOnly, CountryReadOnly>> logger,
@@ -71,10 +77,10 @@ namespace uSync.Umbraco.Commerce.Handlers
 
         protected override string GetItemName(CountryReadOnly item) => item.Name;
 
-        public Task HandleAsync(CountrySavedNotification notification) =>
-            CommerceItemSavedAsync(notification.Country);
-
-        public Task HandleAsync(CountryDeletedNotification notification) =>
+        public Task HandleNotificationAsync(CountryDeletedNotification notification) =>
             CommerceItemDeletedAsync(notification.Country);
+
+        public Task HandleNotificationAsync(CountrySavedNotification notification) =>
+            CommerceItemSavedAsync(notification.Country);
     }
 }

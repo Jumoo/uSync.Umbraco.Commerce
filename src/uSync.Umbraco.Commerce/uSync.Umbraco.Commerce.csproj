@@ -14,9 +14,8 @@
     <PackageId>uSync.Umbraco.Commerce</PackageId>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Umbraco.Commerce" Version="17.*" />
-    <PackageReference Include="Umbraco.Commerce.Cms.Startup" Version="17.*" />
-    <PackageReference Include="uSync.Core" Version="17.*" />
-    <PackageReference Include="uSync.BackOffice" Version="17.*" />
+    <PackageReference Include="Umbraco.Commerce" Version="17.0.0" />
+    <PackageReference Include="uSync.Core" Version="17.0.2" />
+    <PackageReference Include="uSync.BackOffice" Version="17.0.2" />
   </ItemGroup>
 </Project>

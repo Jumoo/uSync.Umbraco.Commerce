@@ -28,8 +28,8 @@ namespace uSync.Umbraco.Commerce.Handlers
     public class TaxClassHandler
         : CommerceSyncHandlerBase<TaxClassReadOnly>,
             ISyncHandler,
-            IAsyncEventHandlerFor<TaxClassSavedNotification>,
-            IAsyncEventHandlerFor<TaxClassDeletedNotification>
+            ISyncCommerceEventHandler<TaxClassSavedNotification>,
+            ISyncCommerceEventHandler<TaxClassDeletedNotification>
     {
         public TaxClassHandler(
             ILogger<SyncHandlerRoot<TaxClassReadOnly, TaxClassReadOnly>> logger,
@@ -65,10 +65,10 @@ namespace uSync.Umbraco.Commerce.Handlers
         protected override Task<IEnumerable<TaxClassReadOnly>> GetByStoreAsync(Guid storeId) =>
             _CommerceApi.GetTaxClassesAsync(storeId);
 
-        public Task HandleAsync(TaxClassSavedNotification notification) =>
+        public Task HandleNotificationAsync(TaxClassSavedNotification notification) =>
             CommerceItemSavedAsync(notification.TaxClass);
 
-        public Task HandleAsync(TaxClassDeletedNotification notification) =>
+        public Task HandleNotificationAsync(TaxClassDeletedNotification notification) =>
             CommerceItemDeletedAsync(notification.TaxClass);
     }
 }

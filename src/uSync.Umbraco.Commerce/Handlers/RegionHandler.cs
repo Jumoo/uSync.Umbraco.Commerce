@@ -30,8 +30,8 @@ namespace uSync.Umbraco.Commerce.Handlers
         : CommerceSyncHandlerBase<RegionReadOnly>,
             ISyncHandler,
             ISyncPostImportHandler,
-            IAsyncEventHandlerFor<RegionSavedNotification>,
-            IAsyncEventHandlerFor<RegionDeletedNotification>
+            ISyncCommerceEventHandler<RegionSavedNotification>,
+            ISyncCommerceEventHandler<RegionDeletedNotification>
     {
         public RegionHandler(
             ILogger<SyncHandlerRoot<RegionReadOnly, RegionReadOnly>> logger,
@@ -67,10 +67,10 @@ namespace uSync.Umbraco.Commerce.Handlers
 
         protected override string GetItemName(RegionReadOnly item) => item.Name;
 
-        public Task HandleAsync(RegionSavedNotification notification) =>
+        public Task HandleNotificationAsync(RegionSavedNotification notification) =>
             CommerceItemSavedAsync(notification.Region);
 
-        public Task HandleAsync(RegionDeletedNotification notification) =>
+        public Task HandleNotificationAsync(RegionDeletedNotification notification) =>
             CommerceItemDeletedAsync(notification.Region);
     }
 }

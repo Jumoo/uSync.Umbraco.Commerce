@@ -24,7 +24,9 @@ namespace uSync.Umbraco.Commerce.Handlers
         Icon = "icon-coins-dollar-alt",
         EntityType = CommerceConstants.UdiEntityType.Currency
     )]
-    public class CurrencyHandler : CommerceSyncHandlerBase<CurrencyReadOnly>, ISyncHandler
+    public class CurrencyHandler : CommerceSyncHandlerBase<CurrencyReadOnly>, ISyncHandler,
+        ISyncCommerceEventHandler<CurrencySavedNotification>,
+        ISyncCommerceEventHandler<CurrencyDeletedNotification>
     {
         public CurrencyHandler(
             ILogger<SyncHandlerRoot<CurrencyReadOnly, CurrencyReadOnly>> logger,
@@ -60,10 +62,10 @@ namespace uSync.Umbraco.Commerce.Handlers
 
         protected override string GetItemName(CurrencyReadOnly item) => item.Name;
 
-        public Task HandleAsync(CurrencySavedNotification notification) =>
+        public Task HandleNotificationAsync(CurrencySavedNotification notification) =>
             CommerceItemSavedAsync(notification.Currency);
 
-        public Task HandleAsync(CurrencyDeletedNotification notification) =>
+        public Task HandleNotificationAsync(CurrencyDeletedNotification notification) =>
             CommerceItemDeletedAsync(notification.Currency);
     }
 }

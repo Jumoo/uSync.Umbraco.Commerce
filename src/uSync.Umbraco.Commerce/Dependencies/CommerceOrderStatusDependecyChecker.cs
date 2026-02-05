@@ -24,7 +24,7 @@ namespace uSync.Umbraco.Commerce.Dependencies
                 Udi = Udi.Create(CommerceConstants.UdiEntityType.OrderStatus, item.Id),
             };
 
-            return Task.FromResult(dependency.AsEnumerableOfOne());
+            return Task.FromResult<IEnumerable<uSyncDependency>>([dependency]);
         }
     }
 }

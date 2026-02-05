@@ -47,7 +47,7 @@ namespace uSync.Umbraco.Commerce.SyncManagers
             // for the store just return ths store item,
             // the depdency checker will do the rest.
             if (item.Udi.EntityType == CommerceConstants.UdiEntityType.Store)
-                return item.AsEnumerableOfOne();
+                return [item];
 
             // for other items the ID might be the store ID
             // which acts as a root Udi for that type in the store.
@@ -55,7 +55,7 @@ namespace uSync.Umbraco.Commerce.SyncManagers
             {
                 var store = await _CommerceApi.GetStoreAsync(guidUdi.Guid);
                 if (store == null)
-                    return item.AsEnumerableOfOne();
+                    return [item];
 
                 // if it was the store, get all the items of that type
 
@@ -73,7 +73,7 @@ namespace uSync.Umbraco.Commerce.SyncManagers
                         );
                 }
             }
-            return item.AsEnumerableOfOne();
+            return [item];
         }
 
         /// <summary>
@@ -120,8 +120,8 @@ namespace uSync.Umbraco.Commerce.SyncManagers
 
             var CommerceNodeType = Ids.FirstOrDefault(x => x.Value == attempt.Result).Key;
 
-            if (_nodeToEntityMapping.ContainsKey(CommerceNodeType))
-                return _nodeToEntityMapping[CommerceNodeType];
+            if (_nodeToEntityMapping.TryGetValue(CommerceNodeType, out string value))
+                return value;
 
             return string.Empty;
         }

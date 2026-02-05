@@ -24,7 +24,9 @@ namespace uSync.Umbraco.Commerce.Handlers
         Icon = "icon-mailbox",
         EntityType = CommerceConstants.UdiEntityType.EmailTemplate
     )]
-    public class EmailTemplateHandler : CommerceSyncHandlerBase<EmailTemplateReadOnly>, ISyncHandler
+    public class EmailTemplateHandler : CommerceSyncHandlerBase<EmailTemplateReadOnly>, ISyncHandler,
+        ISyncCommerceEventHandler<EmailTemplateSavedNotification>,
+        ISyncCommerceEventHandler<EmailTemplateDeletedNotification>
     {
         public EmailTemplateHandler(
             ILogger<SyncHandlerRoot<EmailTemplateReadOnly, EmailTemplateReadOnly>> logger,
@@ -60,10 +62,10 @@ namespace uSync.Umbraco.Commerce.Handlers
 
         protected override string GetItemName(EmailTemplateReadOnly item) => item.Name;
 
-        public Task HandleAsync(EmailTemplateSavedNotification notification) =>
+        public Task HandleNotificationAsync(EmailTemplateSavedNotification notification) =>
             CommerceItemSavedAsync(notification.EmailTemplate);
 
-        public Task HandleAsync(EmailTemplateDeletedNotification notification) =>
+        public Task HandleNotificationAsync(EmailTemplateDeletedNotification notification) =>
             CommerceItemDeletedAsync(notification.EmailTemplate);
     }
 }

@@ -31,8 +31,8 @@ namespace uSync.Umbraco.Commerce.Handlers;
 public class CommerceLocationHandler
     : CommerceSyncHandlerBase<LocationReadOnly>,
         ISyncHandler,
-        IAsyncEventHandlerFor<LocationSavedNotification>,
-        IAsyncEventHandlerFor<LocationDeletedNotification>
+        ISyncCommerceEventHandler<LocationSavedNotification>,
+        ISyncCommerceEventHandler<LocationDeletedNotification>
 {
     public CommerceLocationHandler(
         ILogger<SyncHandlerRoot<LocationReadOnly, LocationReadOnly>> logger,
@@ -80,25 +80,9 @@ public class CommerceLocationHandler
     protected override Task DeleteViaServiceAsync(LocationReadOnly item) =>
         _CommerceApi.DeleteLocationAsync(item.Id);
 
-    public override async Task HandleAsync(
-        SavedNotification<LocationReadOnly> notification,
-        CancellationToken cancellationToken
-    )
-    {
-        foreach (var location in notification.SavedEntities)
-        {
-            await CommerceItemSavedAsync(location);
-        }
-    }
+    public Task HandleNotificationAsync(LocationSavedNotification notification) =>
+        CommerceItemSavedAsync(notification.Location);
 
-    public override async Task HandleAsync(
-        DeletedNotification<LocationReadOnly> notification,
-        CancellationToken cancellationToken
-    )
-    {
-        foreach (var location in notification.DeletedEntities)
-        {
-            await CommerceItemDeletedAsync(location);
-        }
-    }
+    public Task HandleNotificationAsync(LocationDeletedNotification notification) =>
+        CommerceItemDeletedAsync(notification.Location);
 }

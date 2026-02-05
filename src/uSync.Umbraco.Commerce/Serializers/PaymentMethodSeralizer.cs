@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
+
+using Umbraco.Cms.Core.Services.ImportExport;
 using Umbraco.Commerce.Common;
 using Umbraco.Commerce.Core.Api;
 using Umbraco.Commerce.Core.Models;
@@ -141,16 +143,13 @@ namespace uSync.Umbraco.Commerce.Serializers
                     .SetTaxClassAsync(
                         node.Element(nameof(item.TaxClassId)).ValueOrDefault(item.TaxClassId)
                     )
-                    .ToggleFeaturesAsync(
-                        node.Element(nameof(item.CanFetchPaymentStatuses))
-                            .ValueOrDefault(item.CanFetchPaymentStatuses),
-                        node.Element(nameof(item.CanCapturePayments))
-                            .ValueOrDefault(item.CanCapturePayments),
-                        node.Element(nameof(item.CanCancelPayments))
-                            .ValueOrDefault(item.CanCancelPayments),
-                        node.Element(nameof(item.CanRefundPayments))
-                            .ValueOrDefault(item.CanRefundPayments)
-                    );
+                    .ToggleFeaturesAsync(new PaymentMethodToggleFeatures
+                    {
+                        CanCancelPayments = node.Element(nameof(item.CanCancelPayments)).ValueOrDefault(item.CanCancelPayments),
+                        CanCapturePayments = node.Element(nameof(item.CanCapturePayments)).ValueOrDefault(item.CanCapturePayments),
+                        CanFetchPaymentStatuses = node.Element(nameof(item.CanFetchPaymentStatuses)).ValueOrDefault(item.CanFetchPaymentStatuses),
+                        CanRefundPayments = node.Element(nameof(item.CanRefundPayments)).ValueOrDefault(item.CanRefundPayments)
+                    });
 
                 // do the payment method stuff
                 await DeserializeProviderSettingsAsync(node, item);

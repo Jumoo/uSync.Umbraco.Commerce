@@ -166,7 +166,8 @@ namespace uSync.Umbraco.Commerce.Handlers
             if (!ShouldProcessEvent())
                 return;
 
-            await ExportAsync(item, [.. RootFolders, DefaultFolder], DefaultConfig);
+            var handlerFolders = GetDefaultHandlerFolders();
+            await ExportAsync(item, handlerFolders, DefaultConfig);
         }
 
         protected virtual async Task CommerceItemDeletedAsync(TObject item)
@@ -174,7 +175,8 @@ namespace uSync.Umbraco.Commerce.Handlers
             if (!ShouldProcessEvent())
                 return;
 
-            await ExportDeletedItemAsync(item, [.. RootFolders, DefaultFolder], DefaultConfig);
+            var handlerFolders = GetDefaultHandlerFolders();
+            await ExportDeletedItemAsync(item, handlerFolders, DefaultConfig);
         }
 
         /// <summary>
@@ -192,20 +194,18 @@ namespace uSync.Umbraco.Commerce.Handlers
         /// <summary>
         ///  make the handling of Commerce events a bit more generic, so we can clean up the handler code a bit.
         /// </summary>
-        Task IAsyncEventHandler.HandleAsync(IEvent evt, CancellationToken cancellationToken)
+        async Task IAsyncEventHandler.HandleAsync(IEvent evt, CancellationToken cancellationToken)
         {
-            var eventType = evt.GetType();
-            if (typeof(INotificationEvent).IsAssignableFrom(eventType))
-            {
-                var handlerType = typeof(IAsyncEventHandlerFor<>).MakeGenericType(eventType);
-                if (handlerType.IsAssignableFrom(GetType()))
-                {
-                    var handleMethod = handlerType.GetMethod("Handle", new[] { eventType });
-                    handleMethod.Invoke(this, new[] { evt });
-                }
-            }
+            var type = evt.GetType();
+            if (typeof(INotificationEvent).IsAssignableFrom(type) is false) return;
 
-            return Task.CompletedTask;
+            var handlerType = this.GetType();
+            var handleMethod = handlerType.GetMethod("HandleNotificationAsync", new[] { type });
+            if (handleMethod != null)
+            {
+                var result = (Task)handleMethod.Invoke(this, new[] { evt });
+                await result;
+            }
         }
     }
 }

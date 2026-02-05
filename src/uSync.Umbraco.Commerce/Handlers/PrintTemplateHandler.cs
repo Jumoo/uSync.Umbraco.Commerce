@@ -28,8 +28,8 @@ namespace uSync.Umbraco.Commerce.Handlers
     public class PrintTemplateHandler
         : CommerceSyncHandlerBase<PrintTemplateReadOnly>,
             ISyncHandler,
-            IAsyncEventHandlerFor<PrintTemplateSavedNotification>,
-            IAsyncEventHandlerFor<PrintTemplateDeletedNotification>
+            ISyncCommerceEventHandler<PrintTemplateSavedNotification>,
+            ISyncCommerceEventHandler<PrintTemplateDeletedNotification>
     {
         public PrintTemplateHandler(
             ILogger<SyncHandlerRoot<PrintTemplateReadOnly, PrintTemplateReadOnly>> logger,
@@ -65,10 +65,10 @@ namespace uSync.Umbraco.Commerce.Handlers
 
         protected override string GetItemName(PrintTemplateReadOnly item) => item.Name;
 
-        public Task HandleAsync(PrintTemplateSavedNotification notification) =>
+        public Task HandleNotificationAsync(PrintTemplateSavedNotification notification) =>
             CommerceItemSavedAsync(notification.PrintTemplate);
 
-        public Task Handle(PrintTemplateDeletedNotification notification) =>
+        public Task HandleNotificationAsync(PrintTemplateDeletedNotification notification) =>
             CommerceItemDeletedAsync(notification.PrintTemplate);
     }
 }
