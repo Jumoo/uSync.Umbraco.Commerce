@@ -51,7 +51,8 @@ namespace uSync.Umbraco.Commerce.Dependencies
             items.AddRange(GetEmailTemplates(item.Id));
             items.AddRange(GetExportTemplates(item.Id));
             items.AddRange(GetPrintTemplates(item.Id));
-            // items.AddRange(GetGiftCards(item.Id));
+            items.AddRange(GetDiscounts(item.Id));
+            items.AddRange(GetGiftCards(item.Id));
 
             return items;
         }
@@ -165,5 +166,13 @@ namespace uSync.Umbraco.Commerce.Dependencies
                     Udi = Udi.Create(CommerceConstants.UdiEntityType.GiftCard, x.Id)
                 });
 
+        private IEnumerable<uSyncDependency> GetDiscounts(Guid storeId)
+            => _CommerceApi.GetDiscounts(storeId)
+                .Select(x => new uSyncDependency
+                {
+                    Name = x.Name,
+                    Order = CommerceConstants.Priorites.Discount,
+                    Udi = Udi.Create(CommerceConstants.UdiEntityType.Discount, x.Id)
+                });
     }
 }
