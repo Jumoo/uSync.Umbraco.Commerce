@@ -21,6 +21,9 @@
             public const string PaymentMethod = "PaymentMethod";
             public const string ShippingMethod = "ShippingMethod";
 
+            public const string Discount = "Discount";
+            public const string GiftCard = "GiftCard";
+
             public const string Location = "Location";
         }
 
@@ -59,6 +62,9 @@
 
             public const int PaymentMethod = COMMERCE_RESERVED_LOWER + 21; // requires store, countries, currencies
             public const int ShippingMethod = COMMERCE_RESERVED_LOWER + 22;// requires store, countries, currencies
+
+            public const int Discount = COMMERCE_RESERVED_LOWER + 30; // requires store
+            public const int GiftCard = COMMERCE_RESERVED_LOWER + 31; // requires store, currency
         }
 
         public static class UdiEntityType

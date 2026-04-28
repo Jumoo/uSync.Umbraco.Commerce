@@ -7,17 +7,17 @@ using uSync.Core.Dependency;
 
 namespace uSync.Umbraco.Commerce.Dependencies;
 
-public class CommerceOrderStatusDependecyChecker : ISyncDependencyChecker<OrderStatusReadOnly>
+public class CommerceDiscountDependencyChecker : ISyncDependencyChecker<DiscountReadOnly>
 {
     public UmbracoObjectTypes ObjectType => UmbracoObjectTypes.Unknown;
 
-    public IEnumerable<uSyncDependency> GetDependencies(OrderStatusReadOnly item, DependencyFlags flags)
+    public IEnumerable<uSyncDependency> GetDependencies(DiscountReadOnly item, DependencyFlags flags)
     {
-        return new uSyncDependency
+        return new uSyncDependency  
         {
             Name = item.Name,
-            Order = CommerceConstants.Priorites.OrderStatus,
-            Udi = Udi.Create(CommerceConstants.UdiEntityType.OrderStatus, item.Id)
+            Order = CommerceConstants.Priorites.Discount,
+            Udi = Udi.Create(CommerceConstants.UdiEntityType.Discount, item.Id)
         }.AsEnumerableOfOne();
     }
 }

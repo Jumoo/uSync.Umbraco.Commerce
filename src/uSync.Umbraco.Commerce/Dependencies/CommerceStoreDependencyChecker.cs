@@ -6,6 +6,7 @@ using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Commerce.Core.Api;
 using Umbraco.Commerce.Core.Models;
+using Umbraco.Commerce.Core.Services;
 using uSync.Core.Dependency;
 
 namespace uSync.Umbraco.Commerce.Dependencies
@@ -13,10 +14,12 @@ namespace uSync.Umbraco.Commerce.Dependencies
     public class CommerceStoreDependencyChecker : ISyncDependencyChecker<StoreReadOnly>
     {
         private readonly ICommerceApi _CommerceApi;
+        private readonly IGiftCardService _giftCardService;
 
-        public CommerceStoreDependencyChecker(ICommerceApi CommerceApi)
+        public CommerceStoreDependencyChecker(ICommerceApi CommerceApi, IGiftCardService giftCardService)
         {
             _CommerceApi = CommerceApi;
+            _giftCardService = giftCardService;
         }
 
         public UmbracoObjectTypes ObjectType => UmbracoObjectTypes.Unknown;
@@ -48,6 +51,7 @@ namespace uSync.Umbraco.Commerce.Dependencies
             items.AddRange(GetEmailTemplates(item.Id));
             items.AddRange(GetExportTemplates(item.Id));
             items.AddRange(GetPrintTemplates(item.Id));
+            // items.AddRange(GetGiftCards(item.Id));
 
             return items;
         }
@@ -152,7 +156,14 @@ namespace uSync.Umbraco.Commerce.Dependencies
                     Udi = Udi.Create(CommerceConstants.UdiEntityType.Location, x.Id)
                 });
 
-
+        private IEnumerable<uSyncDependency> GetGiftCards(Guid storeId)
+            => _giftCardService.GetGiftCards(storeId)
+                .Select(x => new uSyncDependency
+                {
+                    Name = x.Code,
+                    Order = CommerceConstants.Priorites.GiftCard,
+                    Udi = Udi.Create(CommerceConstants.UdiEntityType.GiftCard, x.Id)
+                });
 
     }
 }
