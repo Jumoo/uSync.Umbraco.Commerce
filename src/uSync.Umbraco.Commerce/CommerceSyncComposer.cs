@@ -1,9 +1,16 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+using System.Collections.Generic;
+using System.Linq;
+
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Commerce.Extensions;
+
 using uSync.BackOffice;
+using uSync.BackOffice.Configuration;
 using uSync.Umbraco.Commerce.Configuration;
 
 namespace uSync.Umbraco.Commerce
@@ -37,6 +44,21 @@ namespace uSync.Umbraco.Commerce
             UdiParser.RegisterUdiType(CommerceConstants.UdiEntityType.Region, UdiType.GuidUdi);
             UdiParser.RegisterUdiType(CommerceConstants.UdiEntityType.Discount, UdiType.GuidUdi);
             UdiParser.RegisterUdiType(CommerceConstants.UdiEntityType.GiftCard, UdiType.GuidUdi);
+
+            // by default we disable the giftcard and discounts in the default sync - as this is a breaking change
+            builder.Services.PostConfigure<uSyncHandlerSetSettings>("Default", options =>
+            {
+                List<string> disabledHandlers = new();
+
+                bool EnableDiscounts = builder.Config.GetValue(CommerceConstants.Settings.SyncDiscounts, false);
+                if (EnableDiscounts is false) disabledHandlers.Add("CommerceDiscountHandler");
+
+                bool EnableGifCards = builder.Config.GetValue(CommerceConstants.Settings.SyncGiftCards, false);
+                if (EnableGifCards is false) disabledHandlers.Add("CommerceGiftCardHandler");
+
+                options.DisabledHandlers = [.. options.DisabledHandlers.Concat(disabledHandlers).Distinct()];
+            });
+
         }
     }
 }

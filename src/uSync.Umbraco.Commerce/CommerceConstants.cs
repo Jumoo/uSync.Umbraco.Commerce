@@ -4,6 +4,13 @@
     {
         public const string Group = "Commerce";
 
+        internal static class Settings
+        {
+            private const string _preFix = "uSync:Commerce";
+            public const string SyncDiscounts = _preFix + ":SyncDiscounts";
+            public const string SyncGiftCards = _preFix + ":SyncGiftCards";
+        }
+
         internal static class Serialization
         {
             public const string Store = "Store";
