@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 
 namespace uSync.Umbraco.Commerce.Configuration
 {
@@ -10,6 +11,9 @@ namespace uSync.Umbraco.Commerce.Configuration
         {
             PaymentMethods = new CommerceSyncPaymentMethodSettings();
         }
+
+        public bool SyncDiscounts { get; set; } = false;
+        public bool SyncGiftCards { get; set; } = false; 
     }
 
     public class CommerceSyncPaymentMethodSettings

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
@@ -13,6 +14,7 @@ using uSync.Core;
 using uSync.Core.Models;
 using uSync.Core.Serialization;
 using uSync.Umbraco.Commerce.Configuration;
+using uSync.Umbraco.Commerce.Extensions;
 
 namespace uSync.Umbraco.Commerce.Serializers
 {
@@ -203,6 +205,9 @@ namespace uSync.Umbraco.Commerce.Serializers
                 {
                     store = await readOnlyStore.AsWritableAsync(uow);
                 }
+
+                if (store.Id != node.GetStoreId())
+                    throw new DataMisalignedException("Commerce doesn't allow us to change store key's so if the syncing key is different from the store key, you can't sync the files");
 
                 // here we have found or created the store item.
 
@@ -510,6 +515,9 @@ namespace uSync.Umbraco.Commerce.Serializers
 
         public override Task<StoreReadOnly> DoFindItemAsync(string alias) =>
             _CommerceApi.GetStoreAsync(alias);
+
+        public override Task<StoreReadOnly> DoFindItemAsync(string alias, Guid storeId)
+            => _CommerceApi.GetStoreAsync(alias);
 
         public override Task DoSaveItemAsync(StoreReadOnly item) =>
             _uowProvider.ExecuteAsync(async uow =>

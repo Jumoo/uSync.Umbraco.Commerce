@@ -28,7 +28,7 @@ namespace uSync.Umbraco.Commerce.Extensions
         ///  We do this a lot, so this just makes the code for checking etc nicer.
         /// </remarks>
         public static Guid GetStoreId(this XElement node)
-            => node.Element("StoreId").ValueOrDefault(Guid.Empty);
+            => node.Name.LocalName.Equals("Store") ? node.GetKey() : node.Element("StoreId").ValueOrDefault(Guid.Empty);
 
         public static void AddStoreId(this XElement node, Guid storeId)
             => node.Add(new XElement("StoreId", storeId));

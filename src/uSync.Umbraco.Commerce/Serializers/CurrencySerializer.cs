@@ -85,7 +85,7 @@ namespace uSync.Umbraco.Commerce.Serializers
             {
                 Currency currency;
                 if (readOnlyCurrency == null)
-                {
+                {   
                     currency = await Currency.CreateAsync(uow, id, storeId, code, name, culture);
                 }
                 else
