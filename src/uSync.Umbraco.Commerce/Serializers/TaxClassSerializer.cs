@@ -35,7 +35,7 @@ namespace uSync.Umbraco.Commerce.Serializers
         )
             : base(CommerceApi, settingsAccessor, uowProvider, logger) { }
 
-        protected override Task<SyncAttempt<XElement>> SerializeCoreAsync(
+        protected override async Task<SyncAttempt<XElement>> SerializeCoreAsync(
             TaxClassReadOnly item,
             SyncSerializerOptions options
         )
@@ -44,15 +44,13 @@ namespace uSync.Umbraco.Commerce.Serializers
 
             node.Add(new XElement(nameof(item.Name), item.Name));
             node.Add(new XElement(nameof(item.SortOrder), item.SortOrder));
-            node.AddStoreId(item.StoreId);
+
+            var store = await LookupStoreAsync(item.StoreId);
+            node.AddStoreId(item.StoreId, store?.Alias);
 
             node.Add(new XElement(nameof(item.DefaultTaxRate), item.DefaultTaxRate.Value));
-
             node.Add(SerializeTaxRates(item));
-
-            return Task.FromResult(
-                SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export)
-            );
+            return SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export);
         }
 
         private XElement SerializeTaxRates(TaxClassReadOnly item)
@@ -97,10 +95,15 @@ namespace uSync.Umbraco.Commerce.Serializers
                 TaxClass item;
                 if (readonlyItem == null)
                 {
+
+                    var store = await LookupStoreAsync(node);
+                    if (store is null)
+                        return SyncAttempt<TaxClassReadOnly>.Fail(alias, ChangeType.Import, $"Store with id {storeId} not found.");
+
                     item = await TaxClass.CreateAsync(
                         uow,
                         id,
-                        storeId,
+                        store.Id,
                         alias,
                         name,
                         defaultTaxRate

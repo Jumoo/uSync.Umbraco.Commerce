@@ -37,7 +37,7 @@ namespace uSync.Umbraco.Commerce.Serializers
             _uowProvider = uowProvider;
         }
 
-        protected override Task<SyncAttempt<XElement>> SerializeCoreAsync(
+        protected override async Task<SyncAttempt<XElement>> SerializeCoreAsync(
             CurrencyReadOnly item,
             SyncSerializerOptions options
         )
@@ -46,7 +46,9 @@ namespace uSync.Umbraco.Commerce.Serializers
 
             node.Add(new XElement("Name", item.Name));
             node.Add(new XElement(nameof(item.SortOrder), item.SortOrder));
-            node.AddStoreId(item.StoreId);
+
+            var store = await LookupStoreAsync(item.StoreId);
+            node.AddStoreId(item.StoreId, store?.Alias);
 
             node.Add(new XElement(nameof(item.Code), item.Code));
             node.Add(new XElement(nameof(item.CultureName), item.CultureName));
@@ -58,9 +60,8 @@ namespace uSync.Umbraco.Commerce.Serializers
             );
             node.Add(new XElement(nameof(item.FormatTemplate), item.FormatTemplate));
 
-            return Task.FromResult(
-                SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export)
-            );
+            return SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export);
+            
         }
 
         public override bool IsValid(XElement node) =>
@@ -85,8 +86,12 @@ namespace uSync.Umbraco.Commerce.Serializers
             {
                 Currency currency;
                 if (readOnlyCurrency == null)
-                {   
-                    currency = await Currency.CreateAsync(uow, id, storeId, code, name, culture);
+                {
+                    var store = await LookupStoreAsync(node);
+                    if (store is null)
+                        return SyncAttempt<CurrencyReadOnly>.Fail(alias, ChangeType.Import, $"Store with id {storeId} not found.");
+
+                    currency = await Currency.CreateAsync(uow, id, store.Id, code, name, culture);
                 }
                 else
                 {

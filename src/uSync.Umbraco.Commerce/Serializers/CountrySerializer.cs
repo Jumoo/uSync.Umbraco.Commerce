@@ -57,7 +57,11 @@ namespace uSync.Umbraco.Commerce.Serializers
                 Country country;
                 if (readOnlyCountry == null)
                 {
-                    country = await Country.CreateAsync(uow, id, storeId, code, name);
+                    var store = await LookupStoreAsync(node);
+                    if (store is null)
+                        return SyncAttempt<CountryReadOnly>.Fail(alias, ChangeType.Import, $"Store with id {storeId} not found.");
+
+                    country = await Country.CreateAsync(uow, id, store.Id, code, name);
                 }
                 else
                 {
@@ -119,7 +123,7 @@ namespace uSync.Umbraco.Commerce.Serializers
             });
         }
 
-        protected override Task<SyncAttempt<XElement>> SerializeCoreAsync(
+        protected override async Task<SyncAttempt<XElement>> SerializeCoreAsync(
             CountryReadOnly item,
             SyncSerializerOptions options
         )
@@ -140,11 +144,10 @@ namespace uSync.Umbraco.Commerce.Serializers
                 new XElement(nameof(item.TaxCalculationMethodId), item.TaxCalculationMethodId)
             );
 
-            node.AddStoreId(item.StoreId);
+            var store = await LookupStoreAsync(item.StoreId);
+            node.AddStoreId(item.StoreId, store?.Alias);
 
-            return Task.FromResult(
-                SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export)
-            );
+            return SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export);
         }
 
         // overloads to let base functions do the bulk of the work.

@@ -32,7 +32,7 @@ public class CommerceLocationSerializer
     )
         : base(CommerceApi, settingsAccessor, uowProvider, logger) { }
 
-    protected override Task<SyncAttempt<XElement>> SerializeCoreAsync(
+    protected override async Task<SyncAttempt<XElement>> SerializeCoreAsync(
         LocationReadOnly item,
         SyncSerializerOptions options
     )
@@ -49,11 +49,11 @@ public class CommerceLocationSerializer
         node.Add(new XElement(nameof(item.ZipCode), item.ZipCode));
         node.Add(new XElement(nameof(item.CountryIsoCode), item.CountryIsoCode));
         node.Add(new XElement(nameof(item.Region), item.Region));
-        node.AddStoreId(item.StoreId);
 
-        return Task.FromResult(
-            SyncAttemptSucceedIf(node != null, item.Alias, node, Core.ChangeType.Export)
-        );
+        var store = await LookupStoreAsync(item.StoreId);
+        node.AddStoreId(item.StoreId, store?.Alias);
+
+        return SyncAttemptSucceedIf(node != null, item.Alias, node, Core.ChangeType.Export);
     }
 
     protected override async Task<SyncAttempt<LocationReadOnly>> DeserializeCoreAsync(
@@ -73,7 +73,11 @@ public class CommerceLocationSerializer
             Location location;
             if (readonlyItem is null)
             {
-                location = await Location.CreateAsync(uow, key, storeId, alias, name);
+                var store = await LookupStoreAsync(node);
+                if (store is null)
+                    return SyncAttempt<LocationReadOnly>.Fail(alias, ChangeType.Import, $"Store with id {storeId} not found.");
+
+                location = await Location.CreateAsync(uow, key, store.Id, alias, name);
             }
             else
             {

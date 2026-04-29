@@ -7,6 +7,7 @@ using System.Xml.Linq;
 
 using Umbraco.Commerce.Common;
 using Umbraco.Commerce.Core.Api;
+using Umbraco.Commerce.Core.Events.Validation.Handlers.Order;
 using Umbraco.Commerce.Core.Models;
 using Umbraco.Commerce.Core.Services;
 using Umbraco.Commerce.Extensions;
@@ -55,12 +56,14 @@ public class GiftCardSerializer : CommerceSerializerBase<GiftCardReadOnly>,
         => base.IsValid(node)
         && node.GetStoreId() != Guid.Empty;
 
-    protected override Task<SyncAttempt<XElement>> SerializeCoreAsync(GiftCardReadOnly item, SyncSerializerOptions options)
+    protected override async Task<SyncAttempt<XElement>> SerializeCoreAsync(GiftCardReadOnly item, SyncSerializerOptions options)
     {
         var node = InitializeBaseNode(item, ItemAlias(item));
 
         node.Add(new XElement(nameof(item.Code), item.Code));
-        node.AddStoreId(item.StoreId);
+
+        var store = await LookupStoreAsync(item.StoreId);
+        node.AddStoreId(item.StoreId, store?.Alias);
 
         node.Add(new XElement(nameof(item.CurrencyId), item.CurrencyId));
         node.Add(new XElement(nameof(item.OriginalAmount), item.OriginalAmount.Value));
@@ -72,9 +75,7 @@ public class GiftCardSerializer : CommerceSerializerBase<GiftCardReadOnly>,
 
         node.Add(SerializeProperties(item.Properties));
 
-        return Task.FromResult(
-            SyncAttemptSucceedIf(node != null, item.Code, node, ChangeType.Export)
-        );
+        return SyncAttemptSucceedIf(node != null, item.Code, node, ChangeType.Export);
     }
 
     protected override async Task<SyncAttempt<GiftCardReadOnly>> DeserializeCoreAsync(XElement node, SyncSerializerOptions options)
@@ -94,7 +95,11 @@ public class GiftCardSerializer : CommerceSerializerBase<GiftCardReadOnly>,
             GiftCard item;
             if (readonlyItem == null)
             {
-                item = await GiftCard.CreateAsync(uow, id, storeId, code, currencyId, originalAmount, orderId);
+                var store = await LookupStoreAsync(node);
+                if (store is null)
+                    return SyncAttempt<GiftCardReadOnly>.Fail(node.GetAlias(), ChangeType.Import, $"Store with id {storeId} not found.");
+
+                item = await GiftCard.CreateAsync(uow, id, store.Id, code, currencyId, originalAmount, orderId);
             }
             else
             {

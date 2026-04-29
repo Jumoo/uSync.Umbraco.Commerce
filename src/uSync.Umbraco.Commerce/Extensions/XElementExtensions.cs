@@ -30,7 +30,10 @@ namespace uSync.Umbraco.Commerce.Extensions
         public static Guid GetStoreId(this XElement node)
             => node.Name.LocalName.Equals("Store") ? node.GetKey() : node.Element("StoreId").ValueOrDefault(Guid.Empty);
 
-        public static void AddStoreId(this XElement node, Guid storeId)
-            => node.Add(new XElement("StoreId", storeId));
+        public static String GetStoreAlias(this XElement node)
+            => node.Name.LocalName.Equals("Store") ? node.GetAlias() : node.Element("StoreId")?.Attribute("Alias")?.ValueOrDefault(string.Empty);
+
+        public static void AddStoreId(this XElement node, Guid storeId, string storeAlias)
+             => node.Add(new XElement("StoreId", storeId, new XAttribute("Alias", storeAlias ?? string.Empty)));
     }
 }

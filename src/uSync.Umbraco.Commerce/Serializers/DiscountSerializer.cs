@@ -52,13 +52,15 @@ public sealed class DiscountSerializer : CommerceSerializerBase<DiscountReadOnly
         => base.IsValid(node)
         && node.GetStoreId() != Guid.Empty;
 
-    protected override Task<SyncAttempt<XElement>> SerializeCoreAsync(DiscountReadOnly item, SyncSerializerOptions options)
+    protected override async Task<SyncAttempt<XElement>> SerializeCoreAsync(DiscountReadOnly item, SyncSerializerOptions options)
     {
         var node = InitializeBaseNode(item, ItemAlias(item));
 
         node.Add(new XElement(nameof(item.Name), item.Name));
         node.Add(new XElement(nameof(item.SortOrder), item.SortOrder));
-        node.AddStoreId(item.StoreId);
+
+        var store = await LookupStoreAsync(item.StoreId);
+        node.AddStoreId(item.StoreId, store?.Alias);
 
         node.Add(new XElement(nameof(item.Type), item.Type));
         node.Add(new XElement(nameof(item.IsActive), item.IsActive));
@@ -71,9 +73,7 @@ public sealed class DiscountSerializer : CommerceSerializerBase<DiscountReadOnly
         node.Add(SerializeRuleConfig("Rules", item.Rules));
         node.Add(SerializeRewards(item.Rewards));
 
-        return Task.FromResult(
-            SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export)
-        );
+        return SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export);
     }
 
     protected override async Task<SyncAttempt<DiscountReadOnly>> DeserializeCoreAsync(XElement node, SyncSerializerOptions options)
@@ -90,7 +90,11 @@ public sealed class DiscountSerializer : CommerceSerializerBase<DiscountReadOnly
             Discount item;
             if (readonlyItem == null)
             {
-                item = await Discount.CreateAsync(uow, id, storeId, alias, name);
+                var store = await LookupStoreAsync(node);
+                if (store is null)
+                    return SyncAttempt<DiscountReadOnly>.Fail(alias, ChangeType.Import, $"Store with id {storeId} not found.");
+
+                item = await Discount.CreateAsync(uow, id, store.Id, alias, name);
             }
             else
             {

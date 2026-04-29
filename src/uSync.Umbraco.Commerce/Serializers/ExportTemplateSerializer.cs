@@ -31,7 +31,7 @@ namespace uSync.Umbraco.Commerce.Serializers
         )
             : base(CommerceApi, settingsAccessor, uowProvider, logger) { }
 
-        protected override Task<SyncAttempt<XElement>> SerializeCoreAsync(
+        protected override async Task<SyncAttempt<XElement>> SerializeCoreAsync(
             ExportTemplateReadOnly item,
             SyncSerializerOptions options
         )
@@ -40,7 +40,9 @@ namespace uSync.Umbraco.Commerce.Serializers
 
             node.Add(new XElement(nameof(item.Name), item.Name));
             node.Add(new XElement(nameof(item.SortOrder), item.SortOrder));
-            node.AddStoreId(item.StoreId);
+
+            var store = await LookupStoreAsync(item.StoreId);
+            node.AddStoreId(item.StoreId, store?.Alias);
 
             node.Add(new XElement(nameof(item.Category), item.Category));
             node.Add(new XElement(nameof(item.FileMimeType), item.FileMimeType));
@@ -48,9 +50,7 @@ namespace uSync.Umbraco.Commerce.Serializers
             node.Add(new XElement(nameof(item.ExportStrategy), item.ExportStrategy));
             node.Add(new XElement(nameof(item.TemplateView), item.TemplateView));
 
-            return Task.FromResult(
-                SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export)
-            );
+            return SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export);
         }
 
         public override bool IsValid(XElement node) =>
@@ -73,7 +73,11 @@ namespace uSync.Umbraco.Commerce.Serializers
                 ExportTemplate item;
                 if (readOnlyItem == null)
                 {
-                    item = await ExportTemplate.CreateAsync(uow, id, storeId, alias, name);
+                    var store = await LookupStoreAsync(node);
+                    if (store is null)
+                        return SyncAttempt<ExportTemplateReadOnly>.Fail(alias, ChangeType.Import, $"Store with id {storeId} not found.");
+
+                    item = await ExportTemplate.CreateAsync(uow, id, store.Id, alias, name);
                 }
                 else
                 {

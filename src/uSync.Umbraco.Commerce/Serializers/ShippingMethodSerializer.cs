@@ -35,7 +35,7 @@ namespace uSync.Umbraco.Commerce.Serializers
         )
             : base(CommerceApi, settingsAccessor, uowProvider, logger) { }
 
-        protected override Task<SyncAttempt<XElement>> SerializeCoreAsync(
+        protected override async Task<SyncAttempt<XElement>> SerializeCoreAsync(
             ShippingMethodReadOnly item,
             SyncSerializerOptions options
         )
@@ -44,7 +44,10 @@ namespace uSync.Umbraco.Commerce.Serializers
 
             node.Add(new XElement(nameof(item.Name), item.Name));
             node.Add(new XElement(nameof(item.SortOrder), item.SortOrder));
-            node.AddStoreId(item.StoreId);
+
+            var store = await LookupStoreAsync(item.StoreId);
+            node.AddStoreId(item.StoreId, store?.Alias);
+
             node.Add(SerializeCountryRegions(item.AllowedCountryRegions));
 
             node.Add(new XElement(nameof(item.ImageId), item.ImageId));
@@ -57,9 +60,8 @@ namespace uSync.Umbraco.Commerce.Serializers
                 new SortedDictionary<string, string>(item.ShippingProviderSettings.ToDictionary(x => x.Key, x => x.Value))
             ));
 
-            return Task.FromResult(
-                SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export)
-            );
+            return SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export);
+            
         }
 
         public override bool IsValid(XElement node) =>
@@ -86,10 +88,15 @@ namespace uSync.Umbraco.Commerce.Serializers
                 ShippingMethod item;
                 if (readonlyItem == null)
                 {
+                    var store = await LookupStoreAsync(node);
+                    if (store is null)
+                        return SyncAttempt<ShippingMethodReadOnly>.Fail(alias, ChangeType.Import, $"Store with id {storeId} not found.");
+
+
                     item = await ShippingMethod.CreateAsync(
                         uow,
                         id,
-                        storeId,
+                        store.Id,
                         alias,
                         name,
                         shippingProviderAlias,

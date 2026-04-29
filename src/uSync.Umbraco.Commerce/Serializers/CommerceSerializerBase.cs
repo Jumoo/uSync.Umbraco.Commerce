@@ -45,6 +45,24 @@ namespace uSync.Umbraco.Commerce.Serializers
             _uowProvider = uowProvider;
         }
 
+        protected async Task<StoreReadOnly> LookupStoreAsync(Guid key)
+            => await _CommerceApi.GetStoreAsync(key) as StoreReadOnly;
+
+        protected async Task<StoreReadOnly> LookupStoreAsync(XElement node)
+        {
+            var storeId = node.GetStoreId();
+            if (storeId == Guid.Empty) return null;
+
+            var store = await _CommerceApi.GetStoreAsync(storeId);
+            if (store is StoreReadOnly storeReadOnly) 
+                return storeReadOnly;
+
+            var storeAlias = node.GetStoreAlias();
+            if (string.IsNullOrEmpty(storeAlias)) return null;
+
+            return await _CommerceApi.GetStoreAsync(storeAlias);
+        }
+
         public override Guid ItemKey(TObject item) => item.Id;
 
         public override string ItemAlias(TObject item) => GetItemAlias(item);
