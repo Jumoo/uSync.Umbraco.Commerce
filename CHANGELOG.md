@@ -7,6 +7,8 @@ file covers the 17.x line; the 18.x line lives on
 
 ## Unreleased
 
+## 17.1.0 - 2026-08-13
+
 ### Added
 
 - Repository standards: `LICENSE.md`, `README.md`, `CHANGELOG.md`, `SECURITY.md`,
@@ -19,3 +21,15 @@ file covers the 17.x line; the 18.x line lives on
   stored API key.
 - `packages.lock.json`, so a transitive dependency update can't change what a build restores
   without a commit.
+
+### Fixed
+
+- Tax class country/region tax rates were never restored on import: the serializer wrote them
+  under a `<TaxClasses>` element but read them back looking for `<TaxRates>`, so import always saw
+  an empty list and cleared every existing override instead of restoring it ([#10](https://github.com/Jumoo/uSync.Umbraco.Commerce/issues/10)).
+- The exported country/region tax rate value itself round-tripped as `0`, because it was serialized
+  via `TaxRate.ToString()` (`"20.00%"`) instead of the underlying decimal value, which then failed
+  to parse back on import. Tax codes are now round-tripped too.
+- `ShippingMethodSerializer` never removed a country/region shipping allowance that had been
+  removed from the XML, due to a collection-diff comparing the live list against itself instead of
+  against the incoming XML values.
