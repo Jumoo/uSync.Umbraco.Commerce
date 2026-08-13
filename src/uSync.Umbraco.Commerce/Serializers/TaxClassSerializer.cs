@@ -65,7 +65,7 @@ namespace uSync.Umbraco.Commerce.Serializers
                         new XElement("CountryId", rate.CountryId),
                         new XElement("RegionId", rate.RegionId),
                         new XElement("TaxCode", rate.TaxCode),
-                        new XElement("TaxRate", rate.TaxRate)
+                        new XElement("TaxRate", rate.TaxRate.Value)
                     )
                 );
             }
@@ -136,7 +136,7 @@ namespace uSync.Umbraco.Commerce.Serializers
             var taxRates = new List<SyncTaxRateModel>();
 
             // load the regions from the xml.
-            var root = node.Element("TaxRates");
+            var root = node.Element("TaxClasses");
             if (root != null && root.HasElements)
             {
                 foreach (var value in root.Elements("Rate"))
@@ -147,6 +147,7 @@ namespace uSync.Umbraco.Commerce.Serializers
                             CountryId = value.GetGuidValue("CountryId"),
                             RegionId = value.GetGuidValue("RegionId"),
                             Rate = value.Element("TaxRate").ValueOrDefault((decimal)0),
+                            TaxCode = value.Element("TaxCode").ValueOrDefault(string.Empty),
                         }
                     );
                 }
