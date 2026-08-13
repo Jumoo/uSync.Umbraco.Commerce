@@ -1,0 +1,40 @@
+{
+  "$schema": "https://marketplace.umbraco.com/umbraco-marketplace-schema.json",
+  "AuthorDetails": {
+    "Name": "Kevin Jump",
+    "Description": "Creator of uSync, and founder of Jumoo, an Umbraco specialist development studio.",
+    "Url": "https://jumoo.co.uk",
+    "ImageUrl": "https://github.com/KevinJump.png",
+    "SyncContributorsFromRepository": true
+  },
+  "Description": "uSync serializers and handlers for Umbraco Commerce. Extends uSync so store settings — stores, currencies, countries, regions, tax classes, shipping/payment methods, order statuses, and email/print/export templates — export and import as config files, the same way uSync handles content types and the rest of the backoffice. Discounts and gift cards are supported too, opt-in.",
+  "Category": "Commerce",
+  "AlternateCategory": "Developer Tools",
+  "LicenseTypes": [
+    "Free"
+  ],
+  "DocumentationUrl": "https://github.com/Jumoo/uSync.Umbraco.Commerce/blob/v17/main/README.md",
+  "IssueTrackerUrl": "https://github.com/Jumoo/uSync.Umbraco.Commerce/issues",
+  "PackageType": "Package",
+  "PackagesByAuthor": [
+    "uSync",
+    "uSync.Complete"
+  ],
+  "RelatedPackages": [
+    {
+      "PackageId": "Umbraco.Commerce",
+      "Description": "The eCommerce solution by Umbraco HQ that this package brings uSync support to."
+    },
+    {
+      "PackageId": "uSync",
+      "Description": "The base uSync package this bridges into Umbraco Commerce."
+    }
+  ],
+  "Tags": [
+    "usync",
+    "umbraco-commerce",
+    "ecommerce",
+    "config",
+    "import-export"
+  ]
+}
