@@ -1,0 +1,46 @@
+name: PR Project Build
+
+permissions:
+  contents: read
+
+# NOTE: the Jumoo convention is a branch per Umbraco major - this line releases from
+# v18/main, the 17.x line from v17/main. Both patterns are listed so one workflow file
+# covers either branch.
+on:
+  pull_request:
+    branches: [ "main", "*/main" ]
+    paths-ignore:
+      - "**.md"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  config: Release
+  # NOTE: not the solution - uSync.Umbraco.Commerce.slnx references test/Commerce.Site, a
+  # local test site that isn't in the repo (.gitignore excludes test/). The package project
+  # is the whole of what ships.
+  package_project: ./src/uSync.Umbraco.Commerce/uSync.Umbraco.Commerce.csproj
+
+jobs:
+  build-project:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: restore
+        run: dotnet restore ${{ env.package_project }} --locked-mode
+
+      - name: build
+        run: >
+          dotnet build ${{ env.package_project }}
+          -c ${{ env.config }} --no-restore
+          -p:ContinuousIntegrationBuild=true
