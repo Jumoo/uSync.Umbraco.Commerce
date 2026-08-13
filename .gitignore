@@ -121,6 +121,9 @@ publish/
 *.pubxml
 *.publishproj
 
+# pack output - the package-build workflow writes here
+/build-out/
+
 # NuGet Packages
 *.nupkg
 # The packages folder can be ignored because of Package Restore

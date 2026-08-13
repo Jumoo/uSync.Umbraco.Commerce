@@ -1,0 +1,38 @@
+<Project>
+
+	<!--
+		NOTE: adding this file stops any Directory.Build.props further up the disk from
+		applying. There is one at D:\Source\directory.build.props setting NuGetAuditMode,
+		which applied to local builds but never to CI - that setting is carried over below
+		so local and CI builds agree.
+	-->
+
+	<PropertyGroup>
+		<LangVersion>latest</LangVersion>
+		<NuGetAuditMode>direct</NuGetAuditMode>
+	</PropertyGroup>
+
+	<!-- shared package metadata, so the values can't drift if a second project is added -->
+	<PropertyGroup>
+		<VersionPrefix>18.0.0</VersionPrefix>
+		<Authors>Umbraco Community</Authors>
+		<Copyright>Umbraco Community @ 2023-2026</Copyright>
+
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/Jumoo/uSync.Umbraco.Commerce</PackageProjectUrl>
+
+		<RepositoryUrl>https://github.com/Jumoo/uSync.Umbraco.Commerce</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+		<!-- don't append the build onto the version -->
+		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+
+		<!-- lock files, so a transitive update can't change a build without a commit -->
+		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+	</PropertyGroup>
+
+</Project>
