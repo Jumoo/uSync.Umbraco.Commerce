@@ -7,6 +7,12 @@ file covers the 17.x line; the 18.x line lives on
 
 ## Unreleased
 
+### Fixed
+
+- A location whose name contained `/` (or another character not allowed in file names) was
+  exported into an extra sub-folder rather than as a single file. Those characters are now replaced
+  with `-` in the file name ([#9](https://github.com/Jumoo/uSync.Umbraco.Commerce/issues/9)).
+
 ## 17.1.0 - 2026-08-13
 
 ### Added
