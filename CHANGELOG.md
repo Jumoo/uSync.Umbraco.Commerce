@@ -7,6 +7,8 @@ file covers the 18.x line; the 17.x line lives on
 
 ## Unreleased
 
+## 18.0.0 - 2026-10-13
+
 ### Added
 
 - Umbraco / Umbraco Commerce 18 support — `Umbraco.Commerce`, `uSync.Core` and `uSync.BackOffice`
