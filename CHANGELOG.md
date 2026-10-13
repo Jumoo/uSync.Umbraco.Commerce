@@ -7,6 +7,13 @@ file covers the 17.x line; the 18.x line lives on
 
 ## Unreleased
 
+### Fixed
+
+- Store permissions (allowed users and user roles) were never exported, and an import then cleared
+  them on the target. Umbraco Commerce stores these by user / user group key, but the serializer
+  looked them up by int id and alias. Export now resolves the keys to usernames and group aliases,
+  and import maps them back to keys ([#14](https://github.com/Jumoo/uSync.Umbraco.Commerce/issues/14)).
+
 ## 17.1.0 - 2026-08-13
 
 ### Added
