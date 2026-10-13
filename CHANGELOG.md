@@ -9,6 +9,9 @@ file covers the 17.x line; the 18.x line lives on
 
 ### Fixed
 
+- The backoffice localization file 404'd on case-sensitive filesystems (Linux/macOS), so the
+  Settings tree showed raw keys like `#uSync_section`: `umbraco-package.json` referenced
+  `Localization/en.js` but the file ships as `localization/en.js` ([#15](https://github.com/Jumoo/uSync.Umbraco.Commerce/issues/15)).
 - Store permissions (allowed users and user roles) were never exported, and an import then cleared
   them on the target. Umbraco Commerce stores these by user / user group key, but the serializer
   looked them up by int id and alias. Export now resolves the keys to usernames and group aliases,
