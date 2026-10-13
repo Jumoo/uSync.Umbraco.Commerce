@@ -16,6 +16,9 @@ file covers the 17.x line; the 18.x line lives on
   them on the target. Umbraco Commerce stores these by user / user group key, but the serializer
   looked them up by int id and alias. Export now resolves the keys to usernames and group aliases,
   and import maps them back to keys ([#14](https://github.com/Jumoo/uSync.Umbraco.Commerce/issues/14)).
+- A location whose name contained `/` (or another character not allowed in file names) was
+  exported into an extra sub-folder rather than as a single file. Those characters are now replaced
+  with `-` in the file name ([#9](https://github.com/Jumoo/uSync.Umbraco.Commerce/issues/9)).
 
 ## 17.1.0 - 2026-08-13
 

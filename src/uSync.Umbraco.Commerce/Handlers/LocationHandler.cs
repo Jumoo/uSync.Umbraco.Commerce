@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -65,12 +67,21 @@ public class CommerceLocationHandler
         if (useGuid)
             return GetItemKey(item).ToString();
 
+        // location names can contain characters like '/' that would otherwise
+        // end up as extra folders (or invalid paths) on disk.
+        var name = GetItemName(item).ReplaceMany(InvalidFileNameChars, '-');
+
         var store = _CommerceApi.GetStoreAsync(item.StoreId).GetAwaiter().GetResult();
         if (store is null)
-            return GetItemName(item);
+            return name;
 
-        return $"{store.Alias.ToSafeFileName(shortStringHelper)}_{GetItemName(item)}";
+        return $"{store.Alias.ToSafeFileName(shortStringHelper)}_{name}";
     }
+
+    // Path.GetInvalidFileNameChars() only contains '/' on Linux, so add the
+    // Windows set explicitly to get the same file names on every platform.
+    private static readonly char[] InvalidFileNameChars =
+        [.. Path.GetInvalidFileNameChars().Union(['\\', '/', ':', '*', '?', '"', '<', '>', '|'])];
 
     protected override string GetItemName(LocationReadOnly item) => item.Name;
 
