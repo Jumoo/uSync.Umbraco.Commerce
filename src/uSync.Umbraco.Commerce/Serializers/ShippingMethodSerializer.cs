@@ -138,8 +138,8 @@ namespace uSync.Umbraco.Commerce.Serializers
             var valuesToRemove = item
                 .AllowedCountryRegions.Where(x =>
                     countryRegions == null
-                    || !item.AllowedCountryRegions.Any(y =>
-                        y.CountryId == x.CountryId && y.RegionId == y.RegionId
+                    || !countryRegions.Any(y =>
+                        y.CountryId == x.CountryId && y.RegionId == x.RegionId
                     )
                 )
                 .ToList();
