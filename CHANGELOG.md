@@ -7,6 +7,12 @@ file covers the 17.x line; the 18.x line lives on
 
 ## Unreleased
 
+### Fixed
+
+- The backoffice localization file 404'd on case-sensitive filesystems (Linux/macOS), so the
+  Settings tree showed raw keys like `#uSync_section`: `umbraco-package.json` referenced
+  `Localization/en.js` but the file ships as `localization/en.js` ([#15](https://github.com/Jumoo/uSync.Umbraco.Commerce/issues/15)).
+
 ## 17.1.0 - 2026-08-13
 
 ### Added
