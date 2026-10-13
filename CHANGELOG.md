@@ -7,6 +7,10 @@ file covers the 17.x line; the 18.x line lives on
 
 ## Unreleased
 
+### Added
+
+- `umbraco-marketplace.json`, so the package has a listing on the Umbraco Marketplace.
+
 ### Fixed
 
 - The backoffice localization file 404'd on case-sensitive filesystems (Linux/macOS), so the
