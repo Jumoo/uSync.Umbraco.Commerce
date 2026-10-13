@@ -135,14 +135,16 @@ namespace uSync.Umbraco.Commerce.Serializers
             // order rounding method
             node.Add(new XElement(nameof(item.OrderRoundingMethod), item.OrderRoundingMethod));
 
-            SerializeAllowedUsers(node, item);
+            await SerializeAllowedUsersAsync(node, item);
 
             await SerializeUserRolesAsync(node, item);
 
             return SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export);
         }
 
-        private void SerializeAllowedUsers(XElement node, StoreReadOnly item)
+        // Commerce stores allowed users and roles by the Umbraco user / user group key,
+        // we write the username / group alias so the file works across environments.
+        private async Task SerializeAllowedUsersAsync(XElement node, StoreReadOnly item)
         {
             var allowedUsers = new XElement(nameof(item.AllowedUsers));
 
@@ -150,7 +152,9 @@ namespace uSync.Umbraco.Commerce.Serializers
             {
                 foreach (var id in item.AllowedUsers)
                 {
-                    var user = _userService.GetByProviderKey(id.UserId);
+                    var user = Guid.TryParse(id.UserId, out var userKey)
+                        ? await _userService.GetAsync(userKey)
+                        : _userService.GetByProviderKey(id.UserId);
                     if (user != null)
                     {
                         allowedUsers.Add(new XElement("User", user.Username));
@@ -168,7 +172,9 @@ namespace uSync.Umbraco.Commerce.Serializers
             {
                 foreach (var role in item.AllowedUserRoles)
                 {
-                    var group = await _userGroupService.GetAsync(role.Role);
+                    var group = Guid.TryParse(role.Role, out var groupKey)
+                        ? await _userGroupService.GetAsync(groupKey)
+                        : await _userGroupService.GetAsync(role.Role);
                     if (group != null)
                     {
                         allowedRoles.Add(new XElement("Role", group.Alias));
@@ -355,7 +361,7 @@ namespace uSync.Umbraco.Commerce.Serializers
                         var role = await _userGroupService.GetAsync(alias);
                         if (role != null)
                         {
-                            roleIds.Add(role.Alias);
+                            roleIds.Add(role.Key.ToString());
                         }
                     }
                 }
@@ -380,7 +386,7 @@ namespace uSync.Umbraco.Commerce.Serializers
                         var user = _userService.GetByUsername(username);
                         if (user != null)
                         {
-                            userIds.Add(user.Id.ToString());
+                            userIds.Add(user.Key.ToString());
                         }
                     }
                 }

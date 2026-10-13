@@ -8,7 +8,7 @@
       "meta": {
         "culture": "en"
       },
-      "js": "/App_Plugins/Commerce.uSync/Localization/en.js"
+      "js": "/App_Plugins/Commerce.uSync/localization/en.js"
     }
   ]
 }
