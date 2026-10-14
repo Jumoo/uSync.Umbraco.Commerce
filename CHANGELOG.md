@@ -5,7 +5,7 @@ commit history. Like uSync itself, this package ships one release line per Umbra
 file covers the 17.x line; the 18.x line lives on
 [`v18/main`](https://github.com/Jumoo/uSync.Umbraco.Commerce/blob/v18/main/CHANGELOG.md).
 
-## Unreleased
+## 17.1.1 - 2026-10-14
 
 ### Added
 
