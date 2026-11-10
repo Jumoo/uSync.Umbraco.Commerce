@@ -56,9 +56,7 @@ namespace uSync.Umbraco.Commerce.Serializers
             node.Add(new XElement(nameof(item.CalculationMode), (int)item.CalculationMode));
             node.Add(new XElement(nameof(item.ShippingProviderAlias), item.ShippingProviderAlias));
             node.Add(SerializeShippingProviderSettings(item.ShippingProviderSettings));
-            node.Add(new XElement(nameof(item.ShippingProviderSettings),
-                new SortedDictionary<string, string>(item.ShippingProviderSettings.ToDictionary(x => x.Key, x => x.Value))
-            ));
+            node.Add(SerializeCalculationConfig(item));
 
             return SyncAttemptSucceedIf(node != null, item.Name, node, ChangeType.Export);
             
@@ -120,8 +118,7 @@ namespace uSync.Umbraco.Commerce.Serializers
 
                 await DeserializeCountryRegionsAsync(node, item);
                 await DeserializeShippingProviderSettings(node, item);
-
-                var settings = node.Element(nameof(item.ShippingProviderSettings)).ValueOrDefault(null);
+                await DeserializeCalculationConfig(node, item);
 
                 await _CommerceApi.SaveShippingMethodAsync(item);
 
@@ -199,7 +196,7 @@ namespace uSync.Umbraco.Commerce.Serializers
 
             if (values != null && values.Any())
             {
-                foreach (var value in values)
+                foreach (var value in values.OrderBy(x => x.Key))
                 {
                     var element = new XElement("ShippingProviderSetting", value.Value);
                     element.SetAttributeValue("key", value.Key);
@@ -214,40 +211,46 @@ namespace uSync.Umbraco.Commerce.Serializers
         {
             var root = node.Element(nameof(item.CalculationConfig));
 
-            if (root == null || !root.HasElements)
+            // files written before calculation config was exported have no element:
+            // leave whatever the method already has.
+            if (root == null)
             {
                 return;
             }
 
-            var calculationMode = node.Element(nameof(item.CalculationMode)).ValueOrDefault((int)item.CalculationMode);
-
-            if (calculationMode == (int)ShippingCalculationMode.Fixed)
+            // the config type has to match the method's mode, which is only set on create.
+            var calculationMode = node.Element(nameof(item.CalculationMode)).ValueOrDefault(item.CalculationMode);
+            if (calculationMode != item.CalculationMode)
             {
-                var prices = new List<ServicePrice>();
-                foreach (var price in root.Elements(nameof(FixedRateShippingCalculationConfig)))
-                {
-                    var currencyId = price.Element("CurrencyId").ValueOrDefault(Guid.Empty);
-                    var countryId = price.GetGuidValue("CountryId");
-                    var regionId = price.GetGuidValue("RegionId");
-                    var value = price.ValueOrDefault((decimal)0);
-
-                    prices.Add(new ServicePrice(value, currencyId, countryId, regionId));
-                }
-
-                var config = new FixedRateShippingCalculationConfig(prices);
-                await item.SetCalculationConfigAsync(config);
+                logger.LogWarning("Shipping method {alias} is {existingMode} but the sync file is {fileMode}, calculation config not imported",
+                    item.Alias, item.CalculationMode, calculationMode);
+                return;
             }
-            else if (calculationMode == (int)ShippingCalculationMode.Dynamic)
+
+            switch (calculationMode)
             {
-                await item.SetCalculationConfigAsync(JsonSerializer.Deserialize<DynamicRateShippingCalculationConfig>(root.Value));
-            }
-            else if (calculationMode == (int)ShippingCalculationMode.Realtime)
-            {
-                await item.SetCalculationConfigAsync(JsonSerializer.Deserialize<RealtimeRateShippingCalculationConfig>(root.Value));
-            }
-            else
-            {
-                throw new ApplicationException($"Unknown calculation mode: {calculationMode}");
+                case ShippingCalculationMode.Fixed:
+                    var prices = new List<ServicePrice>();
+                    foreach (var price in root.Elements(nameof(FixedRateShippingCalculationConfig)))
+                    {
+                        var currencyId = price.Element("CurrencyId").ValueOrDefault(Guid.Empty);
+                        var countryId = price.GetGuidValue("CountryId");
+                        var regionId = price.GetGuidValue("RegionId");
+                        var value = price.Element("Value").ValueOrDefault((decimal)0);
+
+                        prices.Add(new ServicePrice(value, currencyId, countryId, regionId));
+                    }
+
+                    await item.SetCalculationConfigAsync(new FixedRateShippingCalculationConfig(prices));
+                    break;
+
+                case ShippingCalculationMode.Dynamic when !string.IsNullOrWhiteSpace(root.Value):
+                    await item.SetCalculationConfigAsync(JsonSerializer.Deserialize<DynamicRateShippingCalculationConfig>(root.Value));
+                    break;
+
+                case ShippingCalculationMode.Realtime when !string.IsNullOrWhiteSpace(root.Value):
+                    await item.SetCalculationConfigAsync(JsonSerializer.Deserialize<RealtimeRateShippingCalculationConfig>(root.Value));
+                    break;
             }
         }
 
