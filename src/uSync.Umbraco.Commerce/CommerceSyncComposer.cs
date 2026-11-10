@@ -7,6 +7,7 @@ using System.Linq;
 using Umbraco.Cms.Core;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
+using Umbraco.Commerce.Cms;
 using Umbraco.Commerce.Common.Events;
 using Umbraco.Commerce.Core;
 using Umbraco.Commerce.Core.Events.Notification;
@@ -20,6 +21,7 @@ using uSync.Umbraco.Commerce.Handlers;
 namespace uSync.Umbraco.Commerce;
 
 [ComposeBefore(typeof(uSyncBackOfficeComposer))]
+[ComposeAfter(typeof(UmbracoCommerceComposer))]
 public class CommerceSyncComposer : IComposer
 {
     public void Compose(IUmbracoBuilder builder)
@@ -29,14 +31,19 @@ public class CommerceSyncComposer : IComposer
 
         builder.Services.AddSingleton<CommerceSyncSettingsAccessor>();
 
-        // No need to register serializers in v9 as they
-        // are auto discovered however we do need to ensure
-        // that Commerce has been initialized so we'll call AddCommerce
-        // which should auto escape if it's already been added
-        builder.AddUmbracoCommerce(commerceBuilder =>
-        {
-            commerceBuilder.AdduSyncEventHandlers();
-        });
+        // Serializers are auto discovered, but the Commerce event handlers have to be
+        // registered on the Commerce builder.
+        //
+        // AddUmbracoCommerce only runs on its first call - any later call returns early
+        // without invoking its config callback. So we can't pass our handlers in as a
+        // callback: if a site calls AddUmbracoCommerce in Program.cs (e.g. to AddSQLite)
+        // or Commerce's own composer has already run, the handlers would be silently
+        // dropped and nothing would export on save.
+        //
+        // Instead we make sure Commerce is set up (a no-op if it already is) and then
+        // register against whichever Commerce builder was created first.
+        builder.AddUmbracoCommerce();
+        builder.WithUmbracoCommerceBuilder().AdduSyncEventHandlers();
 
         UdiParser.RegisterUdiType(CommerceConstants.UdiEntityType.Store, UdiType.GuidUdi);
         UdiParser.RegisterUdiType(CommerceConstants.UdiEntityType.OrderStatus, UdiType.GuidUdi);
