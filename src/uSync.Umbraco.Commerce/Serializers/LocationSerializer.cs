@@ -64,7 +64,7 @@ public class CommerceLocationSerializer
         var readonlyItem = await FindItemAsync(node);
 
         var alias = node.GetAlias();
-        var key = node.GetKey();
+        var key = await GetCreateKeyAsync(node, readonlyItem);
         var name = node.Element(nameof(readonlyItem.Name)).ValueOrDefault(alias);
         var storeId = node.GetStoreId();
 

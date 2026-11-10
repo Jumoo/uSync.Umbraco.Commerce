@@ -73,7 +73,7 @@ namespace uSync.Umbraco.Commerce.Serializers
             var readonlyItem = await FindItemAsync(node);
 
             var alias = node.GetAlias();
-            var id = node.GetKey();
+            var id = await GetCreateKeyAsync(node, readonlyItem);
             var name = node.Element(nameof(ShippingMethodReadOnly.Name)).ValueOrDefault(alias);
             var calculationMode = node.Element(nameof(ShippingMethodReadOnly.CalculationMode))
                 .ValueOrDefault(readonlyItem?.CalculationMode ?? ShippingCalculationMode.Fixed);
