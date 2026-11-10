@@ -54,7 +54,7 @@ namespace uSync.Umbraco.Commerce.Serializers
             if (storeId == Guid.Empty) return null;
 
             var store = await _CommerceApi.GetStoreAsync(storeId);
-            if (store is StoreReadOnly storeReadOnly) 
+            if (store is StoreReadOnly storeReadOnly && !storeReadOnly.IsDeleted)
                 return storeReadOnly;
 
             var storeAlias = node.GetStoreAlias();
@@ -69,7 +69,69 @@ namespace uSync.Umbraco.Commerce.Serializers
 
         public override Task<TObject> FindItemAsync(string alias) => Task.FromResult<TObject>(null);
 
-        public override Task<TObject> FindItemAsync(Guid key) => DoFindItemAsync(key);
+        public override async Task<TObject> FindItemAsync(Guid key)
+            => NullIfDeleted(await DoFindItemAsync(key));
+
+        /// <summary>
+        ///  Commerce soft deletes items: the row stays in the database with a deleted timestamp,
+        ///  and lookups by key still return it. A deleted item is treated as not there, so an
+        ///  import can create it again rather than comparing against something that is hidden.
+        /// </summary>
+        /// <remarks>
+        ///  every Commerce read-only model has a public IsDeleted, but not through a shared
+        ///  base class or interface, so it is read once by reflection per item type.
+        /// </remarks>
+        protected static bool IsDeleted(TObject item)
+            => item is not null && _isDeletedProperty?.GetValue(item) is true;
+
+        private static readonly System.Reflection.PropertyInfo _isDeletedProperty
+            = typeof(TObject).GetProperty("IsDeleted", typeof(bool));
+
+        protected static TObject NullIfDeleted(TObject item)
+            => IsDeleted(item) ? null : item;
+
+        /// <summary>
+        ///  When an item was found by its alias rather than its key (for example one that was
+        ///  recreated under a new key after a delete) only the key differs from the file. That
+        ///  shouldn't count as a change, or every import would save the item again.
+        /// </summary>
+        public override Task<ChangeType> IsCurrentAsync(XElement node, XElement current, SyncSerializerOptions options)
+        {
+            var key = node.GetKey();
+            if (IgnoreKeyDifferences && current is not null && key != Guid.Empty && current.GetKey() != key)
+            {
+                current = new XElement(current);
+                current.SetAttributeValue("Key", key);
+            }
+
+            return base.IsCurrentAsync(node, current, options);
+        }
+
+        /// <summary>
+        ///  Whether an item matched by alias with a different key counts as current.
+        /// </summary>
+        protected virtual bool IgnoreKeyDifferences => true;
+
+        /// <summary>
+        ///  The key to create an item with on import.
+        /// </summary>
+        /// <remarks>
+        ///  Normally this is the key from the file. If Commerce still holds a deleted item with
+        ///  that key, the key can't be reused, so the item is created with a new one. Later
+        ///  imports still find it, because lookups fall back to the alias.
+        /// </remarks>
+        protected async Task<Guid> GetCreateKeyAsync(XElement node, TObject existing)
+        {
+            var key = node.GetKey();
+            if (existing is not null || key == Guid.Empty || !IsDeleted(await DoFindItemAsync(key)))
+                return key;
+
+            var newKey = Guid.NewGuid();
+            logger.LogInformation(
+                "{alias} ({key}) was deleted in Umbraco Commerce, and the deleted item still holds its key. Creating it with the new key {newKey}",
+                node.GetAlias(), key, newKey);
+            return newKey;
+        }
 
         public override Task DeleteItemAsync(TObject item) => DoDeleteItemAsync(item);
 
@@ -106,10 +168,10 @@ namespace uSync.Umbraco.Commerce.Serializers
             if (string.IsNullOrEmpty(alias) || store == Guid.Empty)
                 return null;
 
-            item =  await DoFindItemAsync(alias, store);
+            item = NullIfDeleted(await DoFindItemAsync(alias, store));
             if (item != null) return item;
 
-            return await DoFinalFindAttempt(node);
+            return NullIfDeleted(await DoFinalFindAttempt(node));
         }
 
         protected XElement SerailizeList<TResult>(

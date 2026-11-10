@@ -83,7 +83,7 @@ public class GiftCardSerializer : CommerceSerializerBase<GiftCardReadOnly>,
         var readonlyItem = await FindItemAsync(node);
 
         var code = node.Element(nameof(GiftCardReadOnly.Code)).ValueOrDefault(string.Empty);
-        var id = node.GetKey();
+        var id = await GetCreateKeyAsync(node, readonlyItem);
         var storeId = node.GetStoreId();
         var currencyId = node.Element(nameof(GiftCardReadOnly.CurrencyId)).ValueOrDefault(Guid.Empty);
         var originalAmount = node.Element(nameof(GiftCardReadOnly.OriginalAmount)).ValueOrDefault(0m);

@@ -189,6 +189,10 @@ namespace uSync.Umbraco.Commerce.Serializers
             base.IsValid(node)
             && !string.IsNullOrWhiteSpace(node.Element("Name").ValueOrDefault(string.Empty));
 
+        // a store's key has to match the file (see DeserializeCoreAsync), so a store found
+        // by alias under a different key is a change, and import reports the mismatch.
+        protected override bool IgnoreKeyDifferences => false;
+
         protected override async Task<SyncAttempt<StoreReadOnly>> DeserializeCoreAsync(
             XElement node,
             SyncSerializerOptions options
@@ -205,6 +209,12 @@ namespace uSync.Umbraco.Commerce.Serializers
                 Store store;
                 if (readOnlyStore == null)
                 {
+                    // other synced items find their store by this key, so a store can't be
+                    // recreated under a new one while a deleted store still holds it.
+                    if (IsDeleted(await DoFindItemAsync(id)))
+                        return SyncAttempt<StoreReadOnly>.Fail(alias, ChangeType.Import,
+                            $"Store {alias} ({id}) was deleted in Umbraco Commerce, which keeps deleted stores, so it can't be created again with the same key.");
+
                     store = await Store.CreateAsync(uow, id, alias, name, false);
                 }
                 else

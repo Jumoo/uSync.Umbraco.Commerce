@@ -5,6 +5,27 @@ commit history. Like uSync itself, this package ships one release line per Umbra
 file covers the 18.x line; the 17.x line lives on
 [`v17/main`](https://github.com/Jumoo/uSync.Umbraco.Commerce/blob/v17/main/CHANGELOG.md).
 
+## Unreleased
+
+### Fixed
+
+- Shipping method prices were never synced: the export didn't write them, a price change didn't
+  change the file, and an import created the method with no prices. Prices are now exported and
+  imported, including dynamic and real-time calculation configs. A file exported before this fix
+  leaves the existing prices alone, and a file whose calculation mode differs from the method's is
+  skipped with a warning, because Umbraco Commerce only sets the mode when the method is created.
+  Every shipping method file changes on its first export after upgrading ([#23](https://github.com/Jumoo/uSync.Umbraco.Commerce/issues/23)).
+- Nothing was exported on save when the site called `AddUmbracoCommerce` itself in `Program.cs`
+  (as SQLite needs, for `AddSQLite()`). `AddUmbracoCommerce` only runs its setup callback on the
+  first call, so the package's save and delete handlers were dropped. They are now registered
+  against the existing Commerce builder, whichever order the calls run in ([#25](https://github.com/Jumoo/uSync.Umbraco.Commerce/pull/25)).
+- An item deleted in Umbraco Commerce couldn't be added back by importing its file: the import
+  reported no change and the item stayed hidden. Umbraco Commerce keeps deleted items in the
+  database, and uSync treated them as still there. Deleted items are now ignored, and the import
+  creates the item again. Because the deleted item keeps its key, the new one gets a new key and is
+  matched by alias from then on. A deleted store can't be recreated this way, because other items
+  find their store by key, so its import fails with a message saying why ([#24](https://github.com/Jumoo/uSync.Umbraco.Commerce/issues/24)).
+
 ## 18.0.1 - 2026-10-14
 
 ### Fixed
