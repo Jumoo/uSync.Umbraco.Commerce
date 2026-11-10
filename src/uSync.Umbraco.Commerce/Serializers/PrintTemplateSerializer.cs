@@ -62,7 +62,7 @@ namespace uSync.Umbraco.Commerce.Serializers
             var readOnlyItem = await FindItemAsync(node);
 
             var alias = node.GetAlias();
-            var id = node.GetKey();
+            var id = await GetCreateKeyAsync(node, readOnlyItem);
             var name = node.Element(nameof(readOnlyItem.Name)).ValueOrDefault(alias);
             var storeId = node.GetStoreId();
 

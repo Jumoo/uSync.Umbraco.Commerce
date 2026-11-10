@@ -5,6 +5,17 @@ commit history. Like uSync itself, this package ships one release line per Umbra
 file covers the 18.x line; the 17.x line lives on
 [`v17/main`](https://github.com/Jumoo/uSync.Umbraco.Commerce/blob/v17/main/CHANGELOG.md).
 
+## Unreleased
+
+### Fixed
+
+- An item deleted in Umbraco Commerce couldn't be added back by importing its file: the import
+  reported no change and the item stayed hidden. Umbraco Commerce keeps deleted items in the
+  database, and uSync treated them as still there. Deleted items are now ignored, and the import
+  creates the item again. Because the deleted item keeps its key, the new one gets a new key and is
+  matched by alias from then on. A deleted store can't be recreated this way, because other items
+  find their store by key, so its import fails with a message saying why ([#24](https://github.com/Jumoo/uSync.Umbraco.Commerce/issues/24)).
+
 ## 18.0.1 - 2026-10-14
 
 ### Fixed
