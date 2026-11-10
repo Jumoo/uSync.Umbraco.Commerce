@@ -75,7 +75,7 @@ namespace uSync.Umbraco.Commerce.Serializers
             var readOnlyCurrency = await FindItemAsync(node);
 
             var alias = node.GetAlias();
-            var id = node.GetKey();
+            var id = await GetCreateKeyAsync(node, readOnlyCurrency);
             var name = node.Element("Name").ValueOrDefault(alias);
             var storeId = node.GetStoreId();
             var code = node.Element(nameof(readOnlyCurrency.Code)).ValueOrDefault(string.Empty);
