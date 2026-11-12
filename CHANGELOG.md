@@ -2,10 +2,18 @@
 
 Notable changes to `uSync.Umbraco.Commerce`. Changes before this file existed are only in the
 commit history. Like uSync itself, this package ships one release line per Umbraco major, so this
-file covers the 18.x line; the 17.x line lives on
-[`v17/main`](https://github.com/Jumoo/uSync.Umbraco.Commerce/blob/v17/main/CHANGELOG.md).
+file covers the 19.x line, with 18.x history carried forward from `v18/main`; the 18.x line lives on
+[`v18/main`](https://github.com/Jumoo/uSync.Umbraco.Commerce/blob/v18/main/CHANGELOG.md).
 
-## Unreleased
+## 19.0.0-rc1 - 2026-11-12
+
+Release candidate for Umbraco 19. Includes everything in 18.0.1, and the fixes below that are
+still unreleased on the 18.x line.
+
+### Changed
+
+- Targets Umbraco 19 and .NET 11. Built against Umbraco 19.0.0-rc1, Umbraco Commerce 19.0.0-rc.1
+  and uSync 19.0.0-rc1. No code changes were needed.
 
 ### Fixed
 

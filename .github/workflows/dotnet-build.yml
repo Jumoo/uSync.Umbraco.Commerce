@@ -4,7 +4,7 @@ permissions:
   contents: read
 
 # NOTE: the Jumoo convention is a branch per Umbraco major - this line releases from
-# v18/main, the 17.x line from v17/main. Both patterns are listed so one workflow file
+# v19/main, the 18.x line from v18/main. Both patterns are listed so one workflow file
 # covers either branch.
 on:
   pull_request:
