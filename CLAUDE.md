@@ -12,8 +12,8 @@ files, and imports them back in — the same config-as-files model uSync uses fo
 It is a plugin — it does nothing without Umbraco Commerce, whose types come in via NuGet
 (`Umbraco.Commerce`) and are not in this repo.
 
-**Branch per Umbraco major.** This is `v18/main`, the Umbraco 18 / `net10.0` line. The 17.x line
-is on `v17/main`. Every past major bump (v13, v16, v17) was a pure package-version bump with no
+**Branch per Umbraco major.** This is `v19/main`, the Umbraco 19 / `net11.0` line. The 18.x line
+is on `v18/main`. Every past major bump (v13, v16, v17, v18, v19) was a pure package-version bump with no
 code changes — this package tracks the upstream uSync/Umbraco/Commerce APIs closely and only
 needs porting work when something upstream actually breaks. Check whether the older branch
 already has a fix before writing it here.

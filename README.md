@@ -8,10 +8,10 @@ countries, regions, tax classes, shipping/payment methods, order statuses, and e
 templates — export and import as config files, the same way uSync handles content types and the
 rest of the backoffice. Discounts and gift cards are supported too, opt-in.
 
-Published as `uSync.Umbraco.Commerce`, targeting `net10.0` / Umbraco 18.
+Published as `uSync.Umbraco.Commerce`, targeting `net11.0` / Umbraco 19.
 
-This is the `v18/main` branch, the Umbraco 18 release line. The Umbraco 17 line lives on
-[`v17/main`](https://github.com/Jumoo/uSync.Umbraco.Commerce/tree/v17/main).
+This is the `v19/main` branch, the Umbraco 19 release line. The Umbraco 18 line lives on
+[`v18/main`](https://github.com/Jumoo/uSync.Umbraco.Commerce/tree/v18/main).
 
 > Requires both uSync and Umbraco Commerce installed — this is a bridge between the two, not a
 > standalone package.
@@ -60,13 +60,13 @@ or one already in the global packages cache) never validates against nuget.org, 
 
 ## Releasing
 
-Pushing a `v{version}` tag on `v18/main` (or `v17/main`, for the 17.x line) publishes to NuGet:
+Pushing a `v{version}` tag on `v19/main` (or `v18/main`, for the 18.x line) publishes to NuGet:
 
 ```bash
-git tag v18.0.0 && git push origin v18.0.0
+git tag v19.0.0 && git push origin v19.0.0
 ```
 
-The tag is the version — `v18.0.0` publishes `18.0.0`. The workflow refuses to run if the tag
+The tag is the version — `v19.0.0` publishes `19.0.0`. The workflow refuses to run if the tag
 isn't a valid version, or if the tagged commit isn't on a release branch.
 
 **Pushing the tag publishes.** Nothing pauses for approval — environment protection rules aren't
@@ -78,7 +78,7 @@ Authentication is [trusted publishing](https://learn.microsoft.com/en-us/nuget/n
 the job exchanges a GitHub OIDC token for a short-lived NuGet key, so there is no API key stored
 in the repository.
 
-Every push to `v18/main` also builds a package and uploads it as a build artifact, so a release
+Every push to `v19/main` also builds a package and uploads it as a build artifact, so a release
 candidate can be tested without publishing anything.
 
 ## Contributing

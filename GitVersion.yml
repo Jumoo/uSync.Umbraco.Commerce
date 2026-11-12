@@ -1,4 +1,4 @@
-next-version: 18.0.0
+next-version: 19.0.0
 assembly-versioning-scheme: MajorMinorPatch
 mode: ContinuousDeployment
 branches:
@@ -6,7 +6,7 @@ branches:
     mode: ContinuousDeployment
     tag: ""
     # the Jumoo convention is a branch per Umbraco major - this line releases from
-    # v18/main, the 17.x line from v17/main. both match, so one config covers each branch.
+    # v19/main, the 18.x line from v18/main. both match, so one config covers each branch.
     regex: ^(v[0-9]+\/)?main$
   pull-request:
     mode: ContinuousDeployment

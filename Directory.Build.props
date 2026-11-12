@@ -14,7 +14,7 @@
 
 	<!-- shared package metadata, so the values can't drift if a second project is added -->
 	<PropertyGroup>
-		<VersionPrefix>18.0.0</VersionPrefix>
+		<VersionPrefix>19.0.0</VersionPrefix>
 		<Authors>Umbraco Community</Authors>
 		<Copyright>Umbraco Community @ 2023-2026</Copyright>
 
