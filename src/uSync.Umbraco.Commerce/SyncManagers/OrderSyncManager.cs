@@ -32,7 +32,26 @@ public class OrderSyncManager : CommerceManagerBase, ISyncItemManager
         { NodeType.PrintTemplates, CommerceConstants.UdiEntityType.PrintTemplate },
     };
 
-    public string[] EntityTypes => [.. _nodeToEntityMapping.Values];
+    // the UDI types we hand out, plus the backoffice entity types the push/pull menus send
+    // (uSync.Complete picks the item manager by the entity type it is given).
+    public string[] EntityTypes =>
+    [
+        .. _nodeToEntityMapping.Values,
+        CommerceConstants.UdiEntityType.Region,
+        CommerceConstants.UdiEntityType.Location,
+        CommerceConstants.BackofficeEntityType.Store,
+        CommerceConstants.BackofficeEntityType.OrderStatus,
+        CommerceConstants.BackofficeEntityType.ShippingMethod,
+        CommerceConstants.BackofficeEntityType.Country,
+        CommerceConstants.BackofficeEntityType.Region,
+        CommerceConstants.BackofficeEntityType.Currency,
+        CommerceConstants.BackofficeEntityType.PaymentMethod,
+        CommerceConstants.BackofficeEntityType.TaxClass,
+        CommerceConstants.BackofficeEntityType.EmailTemplate,
+        CommerceConstants.BackofficeEntityType.ExportTemplate,
+        CommerceConstants.BackofficeEntityType.PrintTemplate,
+        CommerceConstants.BackofficeEntityType.Location,
+    ];
 
     public string[] Trees => [Alias];
 
@@ -82,8 +101,24 @@ public class OrderSyncManager : CommerceManagerBase, ISyncItemManager
             ? new SyncEntity()
             {
                 Name = country.Name,
-                Icon = "icon-truck",
+                Icon = "icon-globe",
                 Udi = Udi.Create(CommerceConstants.UdiEntityType.Country, country.Id),
+            }
+            : null,
+        async key => (await _CommerceApi.GetRegionAsync(key)) is RegionReadOnly region
+            ? new SyncEntity()
+            {
+                Name = region.Name,
+                Icon = "icon-map-location",
+                Udi = Udi.Create(CommerceConstants.UdiEntityType.Region, region.Id),
+            }
+            : null,
+        async key => (await _CommerceApi.GetLocationAsync(key)) is LocationReadOnly location
+            ? new SyncEntity()
+            {
+                Name = location.Name,
+                Icon = "icon-map-marker",
+                Udi = Udi.Create(CommerceConstants.UdiEntityType.Location, location.Id),
             }
             : null,
         async key => (await _CommerceApi.GetCurrencyAsync(key)) is CurrencyReadOnly currency
@@ -139,7 +174,7 @@ public class OrderSyncManager : CommerceManagerBase, ISyncItemManager
             ? new SyncEntity()
             {
                 Name = printTemplate.Name,
-                Icon = "icon-truck",
+                Icon = "icon-print",
                 Udi = Udi.Create(
                     CommerceConstants.UdiEntityType.PrintTemplate,
                     printTemplate.Id

@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <StaticWebAssetBasePath>/</StaticWebAssetBasePath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>uSync.Umbraco.Commerce.Complete</PackageId>
+    <Product>uSync.Umbraco.Commerce.Complete</Product>
+    <Title>uSync.Umbraco.Commerce.Complete</Title>
+    <Description>uSync.Complete push and pull menus for Umbraco Commerce store settings</Description>
+    <PackageTags>umbraco, umbracocommerce, ecommerce, usync, usync-complete</PackageTags>
+  </PropertyGroup>
+
+  <!--
+    the item managers that turn a Commerce backoffice entity into something uSync.Complete
+    can push live in uSync.Umbraco.Commerce, so this package only adds the menus - and
+    pulls the main package in with it.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\uSync.Umbraco.Commerce\uSync.Umbraco.Commerce.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ClientAssetsInputs Include="Client\**" Exclude="$(DefaultItemExcludes);Client\node_modules\**" />
+
+    <!-- Dont include the client folder as part of packaging nuget build -->
+    <Content Remove="Client\**" />
+    <None Remove="Client\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
+  <!-- Restore and build Client files -->
+  <Target Name="RestoreClient" Inputs="Client\package.json;Client\package-lock.json" Outputs="Client\node_modules\.package-lock.json">
+    <Message Importance="high" Text="Restoring Client NPM packages..." />
+    <Exec Command="npm ci" WorkingDirectory="Client" />
+  </Target>
+
+  <Target Name="BuildClient" BeforeTargets="AssignTargetPaths" DependsOnTargets="RestoreClient" Inputs="@(ClientAssetsInputs)" Outputs="$(IntermediateOutputPath)client.complete.txt">
+    <Message Importance="high" Text="Executing Client NPM build script..." />
+    <Exec Command="npm run build" WorkingDirectory="Client" />
+    <ItemGroup>
+      <_ClientAssetsBuildOutput Include="wwwroot\App_Plugins\**" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(IntermediateOutputPath)client.complete.txt" Lines="@(_ClientAssetsBuildOutput)" Overwrite="true" />
+  </Target>
+
+</Project>

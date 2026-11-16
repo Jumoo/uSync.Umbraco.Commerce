@@ -51,11 +51,13 @@ Write-Host "Folder   :" $outFolder
 
 $buildParams = "ContinuousIntegrationBuild=true,version=$fullVersion"
 
-dotnet build ..\src\uSync.Umbraco.Commerce\uSync.Umbraco.Commerce.csproj -c $env
+# the Complete project references the main one, so this builds both.
+dotnet build ..\src\uSync.Umbraco.Commerce.Complete\uSync.Umbraco.Commerce.Complete.csproj -c $env
 
 ""; "##### Packaging"; "----------------------------------" ; ""
 
 dotnet pack ..\src\uSync.Umbraco.Commerce\uSync.Umbraco.Commerce.csproj --no-restore -c $env -o $outFolder /p:$buildParams
+dotnet pack ..\src\uSync.Umbraco.Commerce.Complete\uSync.Umbraco.Commerce.Complete.csproj --no-restore -c $env -o $outFolder /p:$buildParams
 
 ""; "##### Copying to LocalGit folder"; "----------------------------------" ; ""
 XCOPY "$outFolder\*.nupkg" "C:\Source\localgit" /Q /Y 
