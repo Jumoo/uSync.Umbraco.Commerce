@@ -26,7 +26,14 @@ var e = [
 	alias: "usync.commerce.pull.action",
 	name: "Pull Commerce item",
 	forEntityTypes: e
-}];
-export { t as manifests };
+}], n = [{
+	type: "localization",
+	alias: "uSync.Umbraco.Commerce.Complete.Localization.En",
+	name: "uSync Commerce Complete English Localization",
+	weight: 100,
+	meta: { culture: "en" },
+	js: () => import("./en-GHTwno-2.js")
+}], r = [...t, ...n];
+export { r as manifests };
 
 //# sourceMappingURL=usync-commerce-complete.js.map

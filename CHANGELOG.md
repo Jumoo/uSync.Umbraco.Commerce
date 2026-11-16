@@ -13,9 +13,13 @@ file covers the 17.x line; the 18.x line lives on
   actions to Umbraco Commerce store settings: on a store, and on its locations, order statuses,
   countries, regions, currencies, payment and shipping methods, tax classes, email/print/export
   templates, discounts and gift cards ([#33](https://github.com/Jumoo/uSync.Umbraco.Commerce/issues/33)).
+  It includes English names for each Commerce item type in uSync.Publisher's push and pull
+  reports, which otherwise show raw keys such as `usyncpublish_CountryReadOnly`.
 
 ### Fixed
 
+- The uSync reports showed raw keys for regions, discounts and gift cards, which were missing
+  from the package's English localization.
 - uSync.Complete couldn't find Umbraco Commerce items by the entity types the Umbraco 17
   backoffice uses (`uc:country` and so on), only by the older `commerce-*` types. Regions and
   locations had no lookup at all, and the discount and gift card lookups never found a single item.
