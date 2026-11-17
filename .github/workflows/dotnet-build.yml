@@ -19,9 +19,9 @@ concurrency:
 env:
   config: Release
   # NOTE: not the solution - uSync.Umbraco.Commerce.slnx references test/Commerce.Site, a
-  # local test site that isn't in the repo (.gitignore excludes test/). The package project
-  # is the whole of what ships.
-  package_project: ./src/uSync.Umbraco.Commerce/uSync.Umbraco.Commerce.csproj
+  # local test site that isn't in the repo (.gitignore excludes test/). The Complete project
+  # references the main package project, so restoring and building it covers both.
+  complete_project: ./src/uSync.Umbraco.Commerce.Complete/uSync.Umbraco.Commerce.Complete.csproj
 
 jobs:
   build-project:
@@ -30,6 +30,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # uSync.Umbraco.Commerce.Complete's Client folder builds itself via an MSBuild target
+      # during `dotnet build` (RestoreClient/BuildClient in its csproj), so node has to be on
+      # PATH before that step.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "lts/*"
+          cache: npm
+          cache-dependency-path: "**/package-lock.json"
+
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
@@ -37,10 +46,10 @@ jobs:
           cache-dependency-path: "**/packages.lock.json"
 
       - name: restore
-        run: dotnet restore ${{ env.package_project }} --locked-mode
+        run: dotnet restore ${{ env.complete_project }} --locked-mode
 
       - name: build
         run: >
-          dotnet build ${{ env.package_project }}
+          dotnet build ${{ env.complete_project }}
           -c ${{ env.config }} --no-restore
           -p:ContinuousIntegrationBuild=true

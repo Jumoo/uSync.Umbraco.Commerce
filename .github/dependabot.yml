@@ -20,6 +20,22 @@ updates:
           - "minor"
           - "patch"
 
+  # build-time only: the Complete project's Client folder, which bundles a manifest file.
+  # The backoffice types follow the Umbraco version we target, like the NuGet pins above.
+  - package-ecosystem: "npm"
+    directory: "/src/uSync.Umbraco.Commerce.Complete/Client"
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "@umbraco-cms/*"
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
