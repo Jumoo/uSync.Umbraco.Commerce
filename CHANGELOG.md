@@ -31,6 +31,14 @@ file covers the 17.x line; the 18.x line lives on
   them correctly.
 - The export template UDI type was never registered (the store type was registered twice
   instead), so an export template UDI couldn't be parsed.
+- Creating a store only exported one of each of its default settings (one order status, one email
+  template and so on), because Umbraco Commerce raises a single saved notification per type when it
+  creates them. Saving a store now also exports the settings that belong to it, so a new store gets
+  a file for every order status, email, print and export template.
+- Saving or deleting an export template didn't update its file: the handler was never registered
+  for Umbraco Commerce's export template notifications.
+- Export and print templates didn't import their sort order, so on another server they could end
+  up in a different order, and every report afterwards showed them as changed.
 
 ## 17.1.2 - 2026-11-10
 

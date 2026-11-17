@@ -49,6 +49,9 @@ public class GiftCardHandler : CommerceSyncHandlerBase<GiftCardReadOnly>, ISyncH
     protected override Task DeleteViaServiceAsync(GiftCardReadOnly item)
         => _giftCardService.DeleteGiftCardAsync(item.Id);
 
+    // Commerce never creates these along with a store, and they're opt-in.
+    protected override bool ExportWithStore => false;
+
     protected override Task<IEnumerable<GiftCardReadOnly>> GetByStoreAsync(Guid storeId)
         => _giftCardService.GetGiftCardsAsync(storeId);
 
