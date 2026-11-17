@@ -99,6 +99,8 @@ internal static class uSyncCommerceEventHandlerExtensions
             .AddCommerceNotificationEvent<EmailTemplateDeletedNotification, EmailTemplateHandler>()
             .AddCommerceNotificationEvent<PrintTemplateSavedNotification, PrintTemplateHandler>()
             .AddCommerceNotificationEvent<PrintTemplateDeletedNotification, PrintTemplateHandler>()
+            .AddCommerceNotificationEvent<ExportTemplateSavedNotification, ExportTemplateHandler>()
+            .AddCommerceNotificationEvent<ExportTemplateDeletedNotification, ExportTemplateHandler>()
             .AddCommerceNotificationEvent<LocationSavedNotification, CommerceLocationHandler>()
             .AddCommerceNotificationEvent<LocationDeletedNotification, CommerceLocationHandler>()
             .AddCommerceNotificationEvent<RegionSavedNotification, RegionHandler>()

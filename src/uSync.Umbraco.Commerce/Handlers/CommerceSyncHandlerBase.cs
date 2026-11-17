@@ -20,9 +20,23 @@ using uSync.Core;
 
 namespace uSync.Umbraco.Commerce.Handlers
 {
+    /// <summary>
+    ///  A handler that can export every item it holds for one store.
+    /// </summary>
+    internal interface ICommerceStoreItemExporter
+    {
+        /// <summary>
+        ///  whether this handler's items are exported when their store is saved.
+        /// </summary>
+        bool ExportWithStore { get; }
+
+        Task ExportStoreItemsAsync(Guid storeId);
+    }
+
     public abstract class CommerceSyncHandlerBase<TObject>
         : SyncHandlerRoot<TObject, TObject>,
-            IAsyncEventHandler
+            IAsyncEventHandler,
+            ICommerceStoreItemExporter
         where TObject : EntityBase
     {
         protected ICommerceApi _CommerceApi;
@@ -168,6 +182,34 @@ namespace uSync.Umbraco.Commerce.Handlers
 
             var handlerFolders = GetDefaultHandlerFolders();
             await ExportAsync(item, handlerFolders, DefaultConfig);
+        }
+
+        /// <summary>
+        ///  whether this handler's items are exported when their store is saved (see <see cref="ExportStoreItemsAsync"/>).
+        /// </summary>
+        protected virtual bool ExportWithStore => true;
+
+        bool ICommerceStoreItemExporter.ExportWithStore => ExportWithStore;
+
+        /// <summary>
+        ///  export every item this handler holds for a store.
+        /// </summary>
+        /// <remarks>
+        ///  When Umbraco Commerce creates a store it also creates its default settings (order statuses,
+        ///  email templates and so on) in one go, but it only raises one saved notification per type,
+        ///  for the last item it saved. So exporting on save alone leaves most of a new store's settings
+        ///  with no file. The store handler calls this when a store is saved, to fill those gaps.
+        /// </remarks>
+        async Task ICommerceStoreItemExporter.ExportStoreItemsAsync(Guid storeId)
+        {
+            if (!ShouldProcessEvent())
+                return;
+
+            var handlerFolders = GetDefaultHandlerFolders();
+            foreach (var item in await GetByStoreAsync(storeId))
+            {
+                await ExportAsync(item, handlerFolders, DefaultConfig);
+            }
         }
 
         protected virtual async Task CommerceItemDeletedAsync(TObject item)
