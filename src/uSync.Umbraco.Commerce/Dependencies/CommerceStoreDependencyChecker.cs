@@ -67,6 +67,7 @@ namespace uSync.Umbraco.Commerce.Dependencies
                 printTemplates
             );
 
+            items.AddRange(locations.Result);
             items.AddRange(orderStatuses.Result);
             items.AddRange(currencies.Result);
             items.AddRange(shippingMethods.Result);
@@ -110,7 +111,7 @@ namespace uSync.Umbraco.Commerce.Dependencies
             {
                 Name = x.Name,
                 Order = CommerceConstants.Priorites.ShippingMethod,
-                Udi = Udi.Create(CommerceConstants.UdiEntityType.ShippingMethod),
+                Udi = Udi.Create(CommerceConstants.UdiEntityType.ShippingMethod, x.Id),
             });
 
         private async Task<IEnumerable<uSyncDependency>> GetCountriesAsync(Guid storeId) =>
@@ -157,8 +158,8 @@ namespace uSync.Umbraco.Commerce.Dependencies
             (await _CommerceApi.GetExportTemplatesAsync(storeId)).Select(x => new uSyncDependency
             {
                 Name = x.Name,
-                Order = CommerceConstants.Priorites.EmailTemplate,
-                Udi = Udi.Create(CommerceConstants.UdiEntityType.EmailTemplate, x.Id),
+                Order = CommerceConstants.Priorites.ExportTemplate,
+                Udi = Udi.Create(CommerceConstants.UdiEntityType.ExportTemplate, x.Id),
             });
 
         private async Task<IEnumerable<uSyncDependency>> GetPrintTemplatesAsync(Guid storeId) =>

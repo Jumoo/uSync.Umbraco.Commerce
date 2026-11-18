@@ -53,7 +53,7 @@ public class CommerceSyncComposer : IComposer
         UdiParser.RegisterUdiType(CommerceConstants.UdiEntityType.PaymentMethod, UdiType.GuidUdi);
         UdiParser.RegisterUdiType(CommerceConstants.UdiEntityType.TaxClass, UdiType.GuidUdi);
         UdiParser.RegisterUdiType(CommerceConstants.UdiEntityType.EmailTemplate, UdiType.GuidUdi);
-        UdiParser.RegisterUdiType(CommerceConstants.UdiEntityType.Store, UdiType.GuidUdi);
+        UdiParser.RegisterUdiType(CommerceConstants.UdiEntityType.ExportTemplate, UdiType.GuidUdi);
         UdiParser.RegisterUdiType(CommerceConstants.UdiEntityType.PrintTemplate, UdiType.GuidUdi);
         UdiParser.RegisterUdiType(CommerceConstants.UdiEntityType.Location, UdiType.GuidUdi);
         UdiParser.RegisterUdiType(CommerceConstants.UdiEntityType.Region, UdiType.GuidUdi);
@@ -99,6 +99,8 @@ internal static class uSyncCommerceEventHandlerExtensions
             .AddCommerceNotificationEvent<EmailTemplateDeletedNotification, EmailTemplateHandler>()
             .AddCommerceNotificationEvent<PrintTemplateSavedNotification, PrintTemplateHandler>()
             .AddCommerceNotificationEvent<PrintTemplateDeletedNotification, PrintTemplateHandler>()
+            .AddCommerceNotificationEvent<ExportTemplateSavedNotification, ExportTemplateHandler>()
+            .AddCommerceNotificationEvent<ExportTemplateDeletedNotification, ExportTemplateHandler>()
             .AddCommerceNotificationEvent<LocationSavedNotification, CommerceLocationHandler>()
             .AddCommerceNotificationEvent<LocationDeletedNotification, CommerceLocationHandler>()
             .AddCommerceNotificationEvent<RegionSavedNotification, RegionHandler>()

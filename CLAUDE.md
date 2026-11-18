@@ -20,16 +20,25 @@ already has a fix before writing it here.
 
 ## Commands
 
-There is no client build step — the backoffice assets under
-`src/uSync.Umbraco.Commerce/wwwroot/App_Plugins` are static files checked into the repo, not
-generated.
+Two packages: `uSync.Umbraco.Commerce` (the main one) and `uSync.Umbraco.Commerce.Complete`
+(uSync.Complete push/pull menus, modelled on `uSync.Forms.Complete`). The main package has no
+client build step — its assets under `src/uSync.Umbraco.Commerce/wwwroot/App_Plugins` are static
+files. The Complete project's `Client` folder **is** built: its csproj runs `npm ci` and
+`npm run build` during `dotnet build`, so Node has to be on PATH. The built bundle in its
+`wwwroot` is committed too.
+
+The Complete project references the main one, so building it builds both:
 
 ```bash
-dotnet build src/uSync.Umbraco.Commerce/uSync.Umbraco.Commerce.csproj -c Release
+dotnet build src/uSync.Umbraco.Commerce.Complete/uSync.Umbraco.Commerce.Complete.csproj -c Release
 ```
 
 ```bash
 dotnet pack src/uSync.Umbraco.Commerce/uSync.Umbraco.Commerce.csproj -c Release
+```
+
+```bash
+dotnet pack src/uSync.Umbraco.Commerce.Complete/uSync.Umbraco.Commerce.Complete.csproj -c Release
 ```
 
 There are no automated tests. Verification is: a clean `dotnet build`, and for anything
@@ -38,7 +47,7 @@ behavioural, running the package against an Umbraco + Umbraco Commerce site and 
 ## Repository shape
 
 **`uSync.Umbraco.Commerce.slnx` references `test/Commerce.Site`, which is not in the repository.**
-`.gitignore` excludes `test/`. It exists locally as a test setup. Build and pack the **project**,
+`.gitignore` excludes `test/`. It exists locally as a test setup. Build and pack the **projects**,
 never the solution — CI does the same, and pointing tooling at the solution fails on a clean
 checkout.
 
@@ -80,6 +89,26 @@ tidy-up; look here first if gift card sync misbehaves.
 tries the store id from the file first, then falls back to `storeAlias` if the id doesn't
 resolve — this is what lets synced files survive a store being recreated with a new key on
 another environment, as long as the alias matches.
+
+**Push/pull needs both entity type spellings in the item managers.** The Umbraco 17 backoffice
+names Commerce items `uc:country`, `uc:store-settings` and so on; uSync's UDIs use
+`commerce-country` etc. (a `:` can't go in a UDI). uSync.Complete picks an `ISyncItemManager`
+by whichever type it holds — the `uc:` one when a menu is clicked, the `commerce-` one once it
+has the UDI — so `OrderSyncManager` / `CommerceStoreManager` list both. Adding a type to the
+Complete project's `Client/src/menus/manifest.ts` without adding it to
+`CommerceConstants.BackofficeEntityType` and a manager's `EntityTypes` gives a menu that does
+nothing.
+
+**Every pushable type needs a dependency checker.** uSync.Complete exports what a handler's
+`ISyncDependencyChecker<T>` returns, so a type with no checker fails a push with "There is
+nothing to export". Complete also caches those results on disk
+(`umbraco/Data/TEMP/uSync/cache/publisher.json`) and only clears them on content/media changes —
+delete that file when testing a checker change, or you'll keep seeing the old result.
+
+**uSync.Complete's push condition rejects `uc:` entity types.** It builds
+`umb://{entityType}/{unique}` and asks the server for available servers; a `:` makes that an
+invalid URI, so the server returns none and the Push/Pull actions never show. That's fixed (or
+not) in uSync.Complete, not here.
 
 **`OneWay` / `CreateOnly` settings are handled once, generically**, in
 `CommerceSyncHandlerBase.ShouldImportAsync` — individual handlers don't need to implement this

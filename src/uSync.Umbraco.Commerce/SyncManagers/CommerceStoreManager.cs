@@ -21,7 +21,13 @@ public class CommerceStoreManager : CommerceManagerBase, ISyncItemManager
     { }
 
     public string[] Trees => [Alias];
-    public string[] EntityTypes => [.. _nodeToEntityMapping.Values];
+    // the UDI types we hand out, plus the backoffice entity types the push/pull menus send.
+    public string[] EntityTypes =>
+    [
+        .. _nodeToEntityMapping.Values,
+        CommerceConstants.BackofficeEntityType.Discount,
+        CommerceConstants.BackofficeEntityType.GiftCard,
+    ];
 
     private Dictionary<NodeType, string> _nodeToEntityMapping => new()
     {
@@ -39,7 +45,7 @@ public class CommerceStoreManager : CommerceManagerBase, ISyncItemManager
 
     protected override List<Func<Guid, Task<SyncEntity>>> SyncEntityFetchers => new()
     {
-        async key => (await _CommerceApi.GetDiscountsAsync(key)) is DiscountReadOnly discount
+        async key => (await _CommerceApi.GetDiscountAsync(key)) is DiscountReadOnly discount
              ? new SyncEntity()
              {
                  Name = discount.Name,
@@ -47,7 +53,7 @@ public class CommerceStoreManager : CommerceManagerBase, ISyncItemManager
                  Udi = Udi.Create(CommerceConstants.UdiEntityType.Discount, discount.Id),
              }
              : null,
-        async key => (await _CommerceApi.GetGiftCardsAsync(key)) is GiftCardReadOnly giftCard
+        async key => (await _CommerceApi.GetGiftCardAsync(key)) is GiftCardReadOnly giftCard
             ? new SyncEntity()
             {
                 Name = giftCard.Code,
