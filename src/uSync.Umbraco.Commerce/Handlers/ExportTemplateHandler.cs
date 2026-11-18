@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Core.Cache;
 using Umbraco.Cms.Core.Strings;
+using Umbraco.Commerce.Common.Events;
 using Umbraco.Commerce.Core.Api;
 using Umbraco.Commerce.Core.Events.Notification;
 using Umbraco.Commerce.Core.Models;
@@ -26,7 +27,9 @@ namespace uSync.Umbraco.Commerce.Handlers
     )]
     public class ExportTemplateHandler
         : CommerceSyncHandlerBase<ExportTemplateReadOnly>,
-            ISyncHandler
+            ISyncHandler,
+            ISyncCommerceEventHandler<ExportTemplateSavedNotification>,
+            ISyncCommerceEventHandler<ExportTemplateDeletedNotification>
     {
         public ExportTemplateHandler(
             ILogger<SyncHandlerRoot<ExportTemplateReadOnly, ExportTemplateReadOnly>> logger,
@@ -63,10 +66,10 @@ namespace uSync.Umbraco.Commerce.Handlers
 
         protected override string GetItemName(ExportTemplateReadOnly item) => item.Name;
 
-        public Task Handle(ExportTemplateSavedNotification notification) =>
+        public Task HandleNotificationAsync(ExportTemplateSavedNotification notification) =>
             CommerceItemSavedAsync(notification.ExportTemplate);
 
-        public Task Handle(ExportTemplateDeletedNotification notification) =>
+        public Task HandleNotificationAsync(ExportTemplateDeletedNotification notification) =>
             CommerceItemDeletedAsync(notification.ExportTemplate);
     }
 }
