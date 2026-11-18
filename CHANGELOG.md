@@ -5,6 +5,41 @@ commit history. Like uSync itself, this package ships one release line per Umbra
 file covers the 18.x line; the 17.x line lives on
 [`v17/main`](https://github.com/Jumoo/uSync.Umbraco.Commerce/blob/v17/main/CHANGELOG.md).
 
+## Unreleased
+
+### Added
+
+- `uSync.Umbraco.Commerce.Complete`, a new package that adds uSync.Complete's Push and Pull
+  actions to Umbraco Commerce store settings: on a store, and on its locations, order statuses,
+  countries, regions, currencies, payment and shipping methods, tax classes, email/print/export
+  templates, discounts and gift cards ([#33](https://github.com/Jumoo/uSync.Umbraco.Commerce/issues/33)).
+  It includes English names for each Commerce item type in uSync.Publisher's push and pull
+  reports, which otherwise show raw keys such as `usyncpublish_CountryReadOnly`.
+
+### Fixed
+
+- The uSync reports showed raw keys for regions, discounts and gift cards, which were missing
+  from the package's English localization.
+- uSync.Complete couldn't find Umbraco Commerce items by the entity types the Umbraco 17
+  backoffice uses (`uc:country` and so on), only by the older `commerce-*` types. Regions and
+  locations had no lookup at all, and the discount and gift card lookups never found a single item.
+- Countries, regions, currencies, locations, payment and shipping methods, tax classes and
+  email/print/export templates had no dependency checker, so uSync.Complete found nothing to
+  export when one of them was pushed on its own ("There is nothing to export").
+- A store's dependencies listed its shipping methods without their ids, its export templates as
+  email templates, and left its locations out altogether, so a store push couldn't include any of
+  them correctly.
+- The export template UDI type was never registered (the store type was registered twice
+  instead), so an export template UDI couldn't be parsed.
+- Creating a store only exported one of each of its default settings (one order status, one email
+  template and so on), because Umbraco Commerce raises a single saved notification per type when it
+  creates them. Saving a store now also exports the settings that belong to it, so a new store gets
+  a file for every order status, email, print and export template.
+- Saving or deleting an export template didn't update its file: the handler was never registered
+  for Umbraco Commerce's export template notifications.
+- Export and print templates didn't import their sort order, so on another server they could end
+  up in a different order, and every report afterwards showed them as changed.
+
 ## 18.0.2 - 2026-11-12
 
 ### Fixed

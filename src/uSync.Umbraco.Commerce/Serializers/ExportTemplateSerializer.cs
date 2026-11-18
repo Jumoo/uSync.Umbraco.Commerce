@@ -100,6 +100,9 @@ namespace uSync.Umbraco.Commerce.Serializers
                     )
                     .SetTemplateViewAsync(
                         node.Element(nameof(item.TemplateView)).ValueOrDefault(item.TemplateView)
+                    )
+                    .SetSortOrderAsync(
+                        node.Element(nameof(item.SortOrder)).ValueOrDefault(item.SortOrder)
                     );
 
                 await _CommerceApi.SaveExportTemplateAsync(item);

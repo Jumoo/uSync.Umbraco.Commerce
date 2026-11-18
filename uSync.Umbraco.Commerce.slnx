@@ -16,5 +16,6 @@
     <File Path="README.md" />
     <File Path="SECURITY.md" />
   </Folder>
+  <Project Path="src/uSync.Umbraco.Commerce.Complete/uSync.Umbraco.Commerce.Complete.csproj" />
   <Project Path="src/uSync.Umbraco.Commerce/uSync.Umbraco.Commerce.csproj" />
 </Solution>

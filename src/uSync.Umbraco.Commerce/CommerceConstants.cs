@@ -106,6 +106,45 @@
 
             public const string Location = "commerce-location";
         }
+
+        /// <summary>
+        ///  entity types the Umbraco Commerce backoffice (v14+) uses for its tree and collection items.
+        /// </summary>
+        /// <remarks>
+        ///  These are what uSync.Complete's push/pull menus send to the server. They can't be used
+        ///  as UDI entity types (the ':' doesn't survive the umb:// uri), so the item managers
+        ///  accept them and hand back a UDI with the matching <see cref="UdiEntityType"/>.
+        /// </remarks>
+        public static class BackofficeEntityType
+        {
+            public const string Store = "uc:store-settings";
+
+            public const string Country = "uc:country";
+
+            public const string Region = "uc:region";
+
+            public const string Currency = "uc:currency";
+
+            public const string OrderStatus = "uc:order-status";
+
+            public const string ShippingMethod = "uc:shipping-method";
+
+            public const string PaymentMethod = "uc:payment-method";
+
+            public const string TaxClass = "uc:tax-class";
+
+            public const string EmailTemplate = "uc:email-template";
+
+            public const string PrintTemplate = "uc:print-template";
+
+            public const string ExportTemplate = "uc:export-template";
+
+            public const string Discount = "uc:discount";
+
+            public const string GiftCard = "uc:gift-card";
+
+            public const string Location = "uc:location";
+        }
     }
 }
 
