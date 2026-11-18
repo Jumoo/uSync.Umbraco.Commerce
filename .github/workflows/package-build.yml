@@ -33,6 +33,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      # GitVersion is a dotnet tool, and the repo's global.json decides which SDK runs it. The
+      # runner's preinstalled SDKs cover v17 and v18, but not the .NET 11 RC that v19 pins, so
+      # install the pinned SDK first.
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
       - name: Install GitVersion
         # pinned to v3 on purpose: v4 of this action requires GitVersion >= 6.2, and our
         # GitVersion.yml is still v5 schema (mode / tag rather than deployment-mode / label).
