@@ -43,6 +43,9 @@ namespace uSync.Umbraco.Commerce.Handlers
         protected override Task DeleteViaServiceAsync(DiscountReadOnly item)
             => _CommerceApi.DeleteDiscountAsync(item.Id);
 
+        // Commerce never creates these along with a store, and they're opt-in.
+        protected override bool ExportWithStore => false;
+
         protected override Task<IEnumerable<DiscountReadOnly>> GetByStoreAsync(Guid storeId)
             => _CommerceApi.GetDiscountsAsync(storeId);
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Umbraco.Cms.Core.Cache;
@@ -37,6 +38,8 @@ public class StoreHandler
         ISyncCommerceEventHandler<StoreSavedNotification>,
         ISyncCommerceEventHandler<StoreDeletedNotification>
 {
+    private readonly IServiceProvider _serviceProvider;
+
     public StoreHandler(
         ILogger<SyncHandlerRoot<StoreReadOnly, StoreReadOnly>> logger,
         AppCaches appCaches,
@@ -45,7 +48,8 @@ public class StoreHandler
         ISyncEventService mutexService,
         ISyncConfigService uSyncConfig,
         ISyncItemFactory itemFactory,
-        ICommerceApi commerceApi
+        ICommerceApi commerceApi,
+        IServiceProvider serviceProvider
     )
         : base(
             logger,
@@ -57,7 +61,9 @@ public class StoreHandler
             itemFactory,
             commerceApi
         )
-    { }
+    {
+        _serviceProvider = serviceProvider;
+    }
 
     /// <summary>
     ///  Delete a store
@@ -102,8 +108,32 @@ public class StoreHandler
 
     protected override string GetItemName(StoreReadOnly item) => item.Name;
 
-    public Task HandleNotificationAsync(StoreSavedNotification notification) =>
-        CommerceItemSavedAsync(notification.Store);
+    public async Task HandleNotificationAsync(StoreSavedNotification notification)
+    {
+        await CommerceItemSavedAsync(notification.Store);
+        await ExportStoreSettingsAsync(notification.Store.Id);
+    }
+
+    /// <summary>
+    ///  export the settings that belong to a store, through their own handlers.
+    /// </summary>
+    /// <remarks>
+    ///  Commerce raises one saved notification per type when it creates a store's default settings,
+    ///  so without this a new store only gets a file for the last item of each type.
+    ///  The handler collection is resolved here, not injected, because it contains this handler.
+    /// </remarks>
+    private async Task ExportStoreSettingsAsync(Guid storeId)
+    {
+        var handlers = _serviceProvider.GetRequiredService<SyncHandlerCollection>()
+            .Handlers
+            .OfType<ICommerceStoreItemExporter>()
+            .Where(x => x is not StoreHandler && x.ExportWithStore);
+
+        foreach (var handler in handlers)
+        {
+            await handler.ExportStoreItemsAsync(storeId);
+        }
+    }
 
     public Task HandleNotificationAsync(StoreDeletedNotification notification) =>
         CommerceItemDeletedAsync(notification.Store);

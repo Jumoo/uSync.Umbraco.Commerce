@@ -18,6 +18,8 @@ env:
   config: Release
   out_folder: ./build-out/
   package_project: ./src/uSync.Umbraco.Commerce/uSync.Umbraco.Commerce.csproj
+  # references package_project, so restoring and building it covers both.
+  complete_project: ./src/uSync.Umbraco.Commerce.Complete/uSync.Umbraco.Commerce.Complete.csproj
 
 jobs:
   version:
@@ -59,6 +61,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # the Complete project builds its Client folder during `dotnet build`, so node has
+      # to be on PATH first.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "lts/*"
+          cache: npm
+          cache-dependency-path: "**/package-lock.json"
+
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
@@ -66,11 +76,11 @@ jobs:
           cache-dependency-path: "**/packages.lock.json"
 
       - name: restore
-        run: dotnet restore ${{ env.package_project }} --locked-mode
+        run: dotnet restore ${{ env.complete_project }} --locked-mode
 
       - name: build
         run: >
-          dotnet build ${{ env.package_project }}
+          dotnet build ${{ env.complete_project }}
           -c ${{ env.config }} --no-restore
           -p:ContinuousIntegrationBuild=true
 
@@ -79,6 +89,14 @@ jobs:
       - name: package
         run: >
           dotnet pack ${{ env.package_project }}
+          -c ${{ env.config }}
+          --output ${{ env.out_folder }}
+          /p:version=${{ needs.version.outputs.version_string }}
+          -p:ContinuousIntegrationBuild=true
+
+      - name: package complete
+        run: >
+          dotnet pack ${{ env.complete_project }}
           -c ${{ env.config }}
           --output ${{ env.out_folder }}
           /p:version=${{ needs.version.outputs.version_string }}

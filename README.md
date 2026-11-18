@@ -26,23 +26,37 @@ This is the `v18/main` branch, the Umbraco 18 release line. The Umbraco 17 line 
 Both default to off — enabling them changes what a `uSync export` produces, so it's opt-in
 rather than a silent behaviour change on upgrade.
 
+## uSync.Complete push and pull
+
+`uSync.Umbraco.Commerce.Complete` adds uSync.Complete's **Push** and **Pull** actions to Umbraco
+Commerce store settings, so a store or a single setting can be sent between servers from the
+backoffice. Install it alongside uSync.Complete; it brings `uSync.Umbraco.Commerce` with it.
+
+The actions appear on a store in the Settings section (which pushes the store and all of its
+settings) and on individual locations, order statuses, countries, regions, currencies, payment
+and shipping methods, tax classes, email/print/export templates, discounts and gift cards.
+Discounts and gift cards still need the settings above turned on to sync.
+
 ## Repository layout
 
 | Path | What it is |
 | --- | --- |
-| `src/uSync.Umbraco.Commerce` | The package — this is what ships |
+| `src/uSync.Umbraco.Commerce` | The main package |
+| `src/uSync.Umbraco.Commerce.Complete` | The uSync.Complete push/pull menus, a second package |
 | `dist/build-package.ps1` | Local packaging script, for a package you don't want to release |
 
 `uSync.Umbraco.Commerce.slnx` references `test/Commerce.Site`, a local test setup that is **not**
-in the repository — `.gitignore` excludes `test/`. Build the package project directly, which is
+in the repository — `.gitignore` excludes `test/`. Build the package projects directly, which is
 what CI does.
 
 ## Building
 
-Requires the .NET SDK pinned in [`global.json`](global.json).
+Requires the .NET SDK pinned in [`global.json`](global.json), and Node (LTS) for the Complete
+project, whose `Client` folder is built by `npm` as part of `dotnet build`. The Complete project
+references the main one, so building it builds both:
 
 ```bash
-dotnet build src/uSync.Umbraco.Commerce/uSync.Umbraco.Commerce.csproj -c Release
+dotnet build src/uSync.Umbraco.Commerce.Complete/uSync.Umbraco.Commerce.Complete.csproj -c Release
 ```
 
 Shared build and package metadata lives in [`Directory.Build.props`](Directory.Build.props).
@@ -50,7 +64,7 @@ Restores are locked, so if you change a dependency you have to commit the regene
 alongside it:
 
 ```bash
-dotnet restore src/uSync.Umbraco.Commerce/uSync.Umbraco.Commerce.csproj --force-evaluate --source https://api.nuget.org/v3/index.json
+dotnet restore src/uSync.Umbraco.Commerce.Complete/uSync.Umbraco.Commerce.Complete.csproj --force-evaluate --source https://api.nuget.org/v3/index.json
 ```
 
 `--source` is not optional. The lock file records a content hash per package, and nuget.org
