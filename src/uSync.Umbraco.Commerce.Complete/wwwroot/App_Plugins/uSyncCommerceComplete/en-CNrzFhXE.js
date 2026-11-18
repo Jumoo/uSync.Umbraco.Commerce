@@ -1,4 +1,4 @@
-// src/lang/en.ts
+// D:/Source/OpenSource/v18/uSync.Umbraco.Commerce/src/uSync.Umbraco.Commerce.Complete/Client/src/lang/en.ts
 var e = { usyncpublish: {
 	StoreReadOnly: "Store",
 	LocationReadOnly: "Location",
@@ -17,4 +17,4 @@ var e = { usyncpublish: {
 } };
 export { e as default };
 
-//# sourceMappingURL=en-GHTwno-2.js.map
+//# sourceMappingURL=en-CNrzFhXE.js.map

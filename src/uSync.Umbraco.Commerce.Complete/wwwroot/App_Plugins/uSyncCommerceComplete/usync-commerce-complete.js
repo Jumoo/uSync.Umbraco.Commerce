@@ -1,4 +1,4 @@
-// src/menus/manifest.ts
+// D:/Source/OpenSource/v18/uSync.Umbraco.Commerce/src/uSync.Umbraco.Commerce.Complete/Client/src/menus/manifest.ts
 var e = [
 	"uc:store-settings",
 	"uc:location",
@@ -32,7 +32,7 @@ var e = [
 	name: "uSync Commerce Complete English Localization",
 	weight: 100,
 	meta: { culture: "en" },
-	js: () => import("./en-GHTwno-2.js")
+	js: () => import("./en-CNrzFhXE.js")
 }], r = [...t, ...n];
 export { r as manifests };
 
