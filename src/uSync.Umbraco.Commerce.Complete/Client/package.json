@@ -1,14 +1,14 @@
 {
   "name": "usync-commerce-complete",
   "private": true,
-  "version": "17.0.0",
+  "version": "18.0.0",
   "type": "module",
   "scripts": {
     "watch": "tsc && vite build --watch",
     "build": "tsc && vite build"
   },
   "devDependencies": {
-    "@umbraco-cms/backoffice": "^17.4.2",
+    "@umbraco-cms/backoffice": "^18.0.0",
     "typescript": "^5.9.3",
     "vite": "^8.3.6"
   }
